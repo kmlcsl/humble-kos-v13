@@ -1,0 +1,2407 @@
+@import "tailwindcss";
+
+/* Custom CSS Variables (kompatibel dengan existing layout) */
+:root {
+    --color-primary: #4f6f52;
+    --color-primary-dark: #3a4d39;
+    --color-primary-light: #a4c3a2;
+    --color-secondary: #eef5e4;
+    --color-accent: #f0a04b;
+    --color-dark: #333333;
+
+    --sidebar-width: 280px;
+    --header-height: 72px;
+    --transition-speed: 0.3s;
+
+    /* Admin CSS Variables */
+    --admin-primary: #1e3a8a;
+    --admin-primary-dark: #0f2063;
+    --admin-secondary: #3b82f6;
+    --admin-accent: #93c5fd;
+    --admin-light: #f8fafc;
+    --admin-dark: #1e293b;
+    --admin-success: #10b981;
+    --admin-warning: #f59e0b;
+    --admin-danger: #ef4444;
+    --admin-info: #3b82f6;
+    --admin-text: #0f172a;
+    --admin-gray-100: #f1f5f9;
+    --admin-gray-200: #e2e8f0;
+    --admin-gray-300: #cbd5e1;
+    --admin-gray-400: #94a3b8;
+    --admin-gray-500: #64748b;
+    --admin-gray-600: #475569;
+    --admin-gray-700: #334155;
+    --admin-gray-800: #1e293b;
+    --admin-gray-900: #0f172a;
+    --admin-sidebar-width: 250px;
+    --admin-sidebar-collapsed-width: 70px;
+    --admin-header-height: 60px;
+    --admin-transition-speed: 0.3s;
+}
+
+/* Global Styles - Override default Tailwind if needed */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Poppins", sans-serif;
+    background-color: #f8f9fa;
+    color: var(--color-dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Main Layout Styles */
+.main-wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.content-wrapper {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    transition: margin-left var(--transition-speed);
+    width: calc(100% - var(--sidebar-width));
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+    padding: 30px;
+    padding-top: calc(var(--header-height) + 20px);
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1030;
+    display: none;
+    transition: all var(--transition-speed);
+}
+
+/* Media Queries */
+@media (max-width: 992px) {
+    .content-wrapper {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .sidebar-active .mobile-overlay {
+        display: block;
+    }
+}
+
+/* Footer Styles */
+.main-footer {
+    background-color: var(--color-primary-dark);
+    color: white;
+    padding: 20px 0 10px;
+}
+
+.footer-logo {
+    width: 120px;
+    margin-bottom: 10px;
+}
+
+.footer-links h5 {
+    color: #f8f9fa;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.footer-links ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.footer-links li {
+    margin-bottom: 6px;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: color 0.2s;
+    font-size: 13px;
+}
+
+.footer-links a:hover {
+    color: var(--color-primary-light);
+}
+
+.social-icons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.social-icons a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    transition: all 0.3s;
+}
+
+.social-icons a:hover {
+    background-color: var(--color-primary);
+    transform: translateY(-2px);
+}
+
+.copyright {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 20px;
+}
+
+/* Custom Components */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s, box-shadow 0.3s;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(79, 111, 82, 0.3);
+}
+
+.btn-outline-primary {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--color-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(79, 111, 82, 0.2);
+}
+
+.badge-primary {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+}
+
+/* Breadcrumb Custom Style */
+.custom-breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.breadcrumb-item a {
+    color: #6c757d;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--color-primary);
+}
+
+.breadcrumb-item.active {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+/* Section Titles */
+.section-title {
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.section-title h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--color-dark);
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.section-title p {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 576px) {
+    .main-content {
+        padding: 15px;
+        padding-top: calc(var(--header-height) + 10px);
+    }
+
+    :root {
+        --header-height: 60px;
+    }
+
+    .main-footer {
+        padding: 15px 0 5px;
+    }
+
+    .footer-logo {
+        width: 90px;
+        margin-bottom: 8px;
+    }
+
+    .footer-links h5 {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .footer-links li {
+        margin-bottom: 3px;
+    }
+
+    .footer-links a {
+        font-size: 11px;
+    }
+
+    .social-icons {
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .social-icons a {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .copyright {
+        font-size: 11px;
+        padding-top: 8px;
+        margin-top: 12px;
+    }
+
+    .card {
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .btn-primary,
+    .btn-outline-primary {
+        padding: 8px 16px;
+        font-size: 14px;
+        border-radius: 6px;
+    }
+
+    .section-title h2 {
+        font-size: 18px;
+    }
+
+    .custom-breadcrumb {
+        margin-bottom: 10px;
+        font-size: 12px;
+    }
+}
+
+/* Very Small Screens */
+@media (max-width: 320px) {
+    .main-content {
+        padding: 10px;
+        padding-top: calc(var(--header-height) + 5px);
+    }
+
+    .main-footer {
+        padding: 10px 0 5px;
+    }
+
+    .footer-logo {
+        width: 80px;
+    }
+
+    .footer-links h5 {
+        font-size: 13px;
+    }
+
+    .footer-links a {
+        font-size: 10px;
+    }
+
+    .social-icons a {
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
+    }
+
+    .btn-primary,
+    .btn-outline-primary {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-primary-light);
+    border-radius: 50%;
+    border-top-color: var(--color-primary);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===========================================
+   LOGIN PAGE STYLES
+   =========================================== */
+
+.login-page-body {
+    font-family: "Poppins", sans-serif;
+    background-color: var(--color-secondary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.register-page-body {
+    font-family: "Poppins", sans-serif;
+    background-color: var(--color-secondary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.login-wrapper {
+    display: flex;
+    max-width: 900px;
+    width: 100%;
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+}
+
+.login-sidebar {
+    flex: 1;
+    background: linear-gradient(135deg, var(--color-primary), #739072);
+    padding: 40px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-sidebar::before {
+    content: "";
+    position: absolute;
+    bottom: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.login-sidebar::after {
+    content: "";
+    position: absolute;
+    top: -30px;
+    left: -30px;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+/* .brand-logo {
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+} */
+
+.brand-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.brand-logo img {
+    width: 160px;
+    height: auto;
+}
+
+.welcome-text {
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 2;
+}
+
+.welcome-text h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.welcome-text p {
+    font-size: 16px;
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+.features-list {
+    position: relative;
+    z-index: 2;
+}
+
+.features-list h4 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.features-list h4 i {
+    margin-right: 10px;
+}
+
+.features-list ul {
+    list-style: none;
+    padding-left: 10px;
+}
+
+.features-list ul li {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.features-list ul li i {
+    color: var(--color-secondary);
+    margin-right: 10px;
+    font-size: 14px;
+}
+
+.login-form {
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.login-form-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.login-form-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    margin-bottom: 10px;
+}
+
+.login-form-header p {
+    font-size: 15px;
+    color: #666;
+}
+
+.login-form .form-group {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.login-form .form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-primary-dark);
+    margin-bottom: 8px;
+}
+
+.login-form .form-control {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.login-form .form-control:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(79, 111, 82, 0.15);
+}
+
+.login-form .input-icon {
+    position: absolute;
+    top: 40px;
+    right: 15px;
+    color: #999;
+    cursor: pointer;
+}
+
+.login-form .toggle-password:hover {
+    color: var(--color-primary);
+}
+
+.login-form .form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.login-form .form-check-input {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.login-form .form-check-input:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.login-form .form-check-label {
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+}
+
+.extra-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.forgot-password {
+    font-size: 14px;
+    color: #739072;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.btn-login {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+/* ===========================================
+   ADMIN LOGIN PAGE STYLES
+   =========================================== */
+
+/* Admin-specific CSS Variables merged dengan :root utama */
+
+/* Override body for admin login page */
+body.admin-login-body {
+    background: linear-gradient(
+        135deg,
+        var(--admin-primary),
+        var(--admin-secondary)
+    );
+    font-family: "Montserrat", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body.admin-login-body::before {
+    content: "";
+    position: absolute;
+    top: -100px;
+    left: -100px;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+}
+
+body.admin-login-body::after {
+    content: "";
+    position: absolute;
+    bottom: -150px;
+    right: -150px;
+    width: 500px;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+}
+
+.admin-login-container {
+    max-width: 450px;
+    width: 100%;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    padding: 50px 40px;
+    position: relative;
+    z-index: 10;
+    margin: auto;
+}
+
+.admin-login-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.admin-login-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--admin-text);
+    margin-bottom: 10px;
+}
+
+.admin-login-header p {
+    font-size: 15px;
+    color: #64748b;
+}
+
+.admin-badge {
+    display: inline-block;
+    background: var(--admin-primary);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-left: 5px;
+}
+
+/* Override form styles for admin */
+.admin-login-container .form-group {
+    margin-bottom: 25px;
+    position: relative;
+}
+
+.admin-login-container .form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--admin-text);
+    margin-bottom: 8px;
+}
+
+.admin-login-container .form-control {
+    width: 100%;
+    padding: 14px 45px 14px 15px;
+    font-size: 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    transition: all 0.3s ease;
+}
+
+.admin-login-container .form-control:focus {
+    border-color: var(--admin-secondary);
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    outline: none;
+}
+
+.admin-login-container .input-icon {
+    position: absolute;
+    top: 43px;
+    right: 15px;
+    color: #94a3b8;
+    transition: color 0.3s ease;
+}
+
+.admin-login-container .form-control:focus + .input-icon {
+    color: var(--admin-secondary);
+}
+
+.admin-login-container .toggle-password:hover {
+    color: var(--admin-primary);
+    cursor: pointer;
+}
+
+.btn-admin-login {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(
+        135deg,
+        var(--admin-primary),
+        var(--admin-secondary)
+    );
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+    margin-top: 15px;
+}
+
+.btn-admin-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4);
+}
+
+.security-notice {
+    display: flex;
+    align-items: center;
+    background-color: #f8fafc;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-top: 30px;
+    border-left: 3px solid var(--admin-secondary);
+}
+
+.security-notice i {
+    color: var(--admin-secondary);
+    font-size: 18px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.security-notice p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+    word-wrap: break-word;
+}
+
+.admin-login-container .forgot-password {
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+.admin-login-container .forgot-password a {
+    font-size: 14px;
+    color: var(--admin-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.admin-login-container .forgot-password a:hover {
+    color: var(--admin-primary);
+    text-decoration: underline;
+}
+
+.admin-login-container .alert {
+    padding: 12px 15px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.admin-login-container .alert-danger {
+    background-color: #fee2e2;
+    color: #ef4444;
+    border-left: 4px solid #ef4444;
+}
+
+.admin-login-container .alert i {
+    margin-right: 10px;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* Admin Login Responsive */
+@media (max-width: 576px) {
+    .admin-login-container {
+        padding: 35px 25px;
+        max-width: 90%;
+        margin: 0 auto;
+    }
+
+    .admin-login-header h1 {
+        font-size: 22px;
+    }
+
+    .admin-login-header p {
+        font-size: 14px;
+    }
+
+    .admin-badge {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+}
+
+@media (max-width: 400px) {
+    .admin-login-container {
+        padding: 30px 20px;
+    }
+
+    .admin-login-header h1 {
+        font-size: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .admin-badge {
+        margin-left: 0;
+        margin-top: 5px;
+    }
+
+    .security-notice {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .security-notice i {
+        margin-right: 0;
+        margin-bottom: 8px;
+        font-size: 20px;
+    }
+}
+
+/* ===========================================
+   ADMIN DASHBOARD LAYOUT STYLES
+   =========================================== */
+
+/* Admin Body Override */
+body.admin-dashboard-body {
+    font-family: "Montserrat", sans-serif;
+    background-color: var(--admin-light);
+    color: var(--admin-gray-700);
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.admin-container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Admin Sidebar */
+.admin-sidebar {
+    width: var(--admin-sidebar-width);
+    background: linear-gradient(
+        to bottom,
+        var(--admin-primary),
+        var(--admin-primary-dark)
+    );
+    height: 100vh;
+    height: 100dvh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1050;
+    transition: all var(--admin-transition-speed) ease;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    color: white;
+}
+
+.admin-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+}
+
+@media (min-width: 992px) {
+    .sidebar-collapsed .admin-sidebar {
+        width: var(--admin-sidebar-collapsed-width);
+    }
+}
+
+/* Admin Main Content */
+.admin-main {
+    flex: 1;
+    margin-left: var(--admin-sidebar-width);
+    transition: margin-left var(--admin-transition-speed) ease;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 992px) {
+    .sidebar-collapsed .admin-main {
+        margin-left: var(--admin-sidebar-collapsed-width);
+    }
+}
+
+/* Admin Header */
+.admin-header {
+    height: var(--admin-header-height);
+    background-color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    transition: all var(--admin-transition-speed) ease;
+}
+
+/* Admin Content */
+.admin-content {
+    flex: 1;
+    padding: 20px;
+    overflow: auto;
+}
+
+/* Dashboard Cards */
+.admin-pemilik-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.admin-pemilik-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--admin-gray-800);
+    margin: 0;
+}
+
+.card-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+}
+
+.icon-primary {
+    background-color: var(--admin-primary);
+}
+
+.icon-success {
+    background-color: var(--admin-success);
+}
+
+.icon-warning {
+    background-color: var(--admin-warning);
+}
+
+.icon-danger {
+    background-color: var(--admin-danger);
+}
+
+.card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--admin-gray-900);
+    margin: 10px 0;
+}
+
+.card-label {
+    font-size: 14px;
+    color: var(--admin-gray-500);
+}
+
+/* Admin Breadcrumb */
+.admin-content .breadcrumb-container {
+    margin-bottom: 20px;
+}
+
+.admin-content .breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.admin-content .breadcrumb-item {
+    font-size: 14px;
+}
+
+.admin-content .breadcrumb-item a {
+    color: var(--admin-gray-600);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.admin-content .breadcrumb-item a:hover {
+    color: var(--admin-primary);
+}
+
+.admin-content .breadcrumb-item.active {
+    color: var(--admin-primary);
+    font-weight: 500;
+}
+
+/* Admin Tables */
+.data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.data-table th {
+    background-color: var(--admin-gray-100);
+    color: var(--admin-gray-700);
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 15px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--admin-gray-200);
+}
+
+.data-table td {
+    padding: 12px 15px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--admin-gray-200);
+    vertical-align: middle;
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Admin Forms */
+.admin-form {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    padding: 25px;
+}
+
+.admin-form .form-label {
+    font-weight: 500;
+    color: var(--admin-gray-700);
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.admin-form .form-control {
+    border: 1px solid var(--admin-gray-300);
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.admin-form .form-control:focus {
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    outline: none;
+}
+
+/* Admin Buttons Override */
+.admin-content .btn {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.admin-content .btn-primary {
+    background-color: var(--admin-primary);
+    border-color: var(--admin-primary);
+}
+
+.admin-content .btn-primary:hover {
+    background-color: var(--admin-primary-dark);
+    border-color: var(--admin-primary-dark);
+}
+
+.admin-content .btn-outline-primary {
+    color: var(--admin-primary);
+    border-color: var(--admin-primary);
+}
+
+.admin-content .btn-outline-primary:hover {
+    background-color: var(--admin-primary);
+    color: white;
+}
+
+/* Admin Alerts */
+.admin-alert {
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-left: 4px solid;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.admin-alert-success {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-left-color: var(--admin-success);
+    color: var(--admin-success);
+}
+
+.admin-alert-warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-left-color: var(--admin-warning);
+    color: var(--admin-warning);
+}
+
+.admin-alert-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-left-color: var(--admin-danger);
+    color: var(--admin-danger);
+}
+
+.admin-alert-info {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-left-color: var(--admin-info);
+    color: var(--admin-info);
+}
+
+.admin-alert i {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+/* Admin Responsive */
+@media (max-width: 991px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+        box-shadow: none;
+        width: var(--admin-sidebar-width);
+        height: 100vh !important;
+        height: 100dvh !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        position: fixed !important;
+        z-index: 1050 !important;
+        transition: transform var(--admin-transition-speed) ease !important;
+    }
+
+    .sidebar-collapsed .admin-sidebar {
+        transform: translateX(0);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .admin-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    .sidebar-collapsed .admin-main {
+        margin-left: 0 !important;
+    }
+
+    .mobile-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        display: none;
+        opacity: 0;
+        transition: opacity var(--admin-transition-speed) ease;
+    }
+
+    .sidebar-collapsed .mobile-overlay {
+        display: block;
+        opacity: 1;
+    }
+
+    /* Prevent body scroll when sidebar is open on mobile */
+    body.sidebar-collapsed {
+        overflow: hidden;
+    }
+}
+
+/* ===========================================
+   ADMIN SIDEBAR NAVIGATION STYLES
+   =========================================== */
+
+/* Sidebar Header */
+.admin-sidebar .sidebar-header {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidebar .sidebar-title {
+    transition: opacity var(--admin-transition-speed);
+}
+
+/* Admin Profile */
+.admin-profile {
+    padding-top: 20px;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 0.5rem;
+    transition: all var(--admin-transition-speed);
+}
+
+/* Navigation Menu */
+.sidebar-nav {
+    padding: 1rem 0;
+    flex: 1;
+}
+
+.sidebar-item {
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: #f1f5f9;
+    text-decoration: none;
+    transition: all 0.3s;
+    border-radius: 6px;
+    margin: 0 10px;
+    position: relative;
+}
+
+.sidebar-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.sidebar-link.active {
+    background-color: var(--admin-secondary);
+    color: white;
+    font-weight: 500;
+}
+
+.sidebar-link i {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+    margin-right: 10px;
+}
+
+.dropdown-indicator {
+    margin-left: auto;
+    transition: transform 0.3s;
+    font-size: 12px;
+}
+
+.sidebar-link[aria-expanded="true"] .dropdown-indicator {
+    transform: rotate(90deg);
+}
+
+/* Custom Dropdown Menu */
+.sidebar-dropdown {
+    padding-left: 2.5rem;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border-left: 1px dashed rgba(255, 255, 255, 0.1);
+    margin-left: 22px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.sidebar-dropdown.show {
+    max-height: 500px; /* Adjust based on content */
+}
+
+.sidebar-dropdown .dropdown-item {
+    display: block;
+    padding: 8px 15px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.sidebar-dropdown .dropdown-item:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-dropdown .dropdown-item.active {
+    color: white;
+    font-weight: 500;
+    background-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+}
+
+/* Collapsed State (Desktop Only) */
+@media (min-width: 992px) {
+    .sidebar-collapsed .sidebar-title,
+    .sidebar-collapsed .admin-profile div,
+    .sidebar-collapsed .sidebar-link span,
+    .sidebar-collapsed .dropdown-indicator {
+        display: none;
+    }
+
+    .sidebar-collapsed .sidebar-link {
+        justify-content: center;
+        padding: 15px;
+    }
+
+    .sidebar-collapsed .sidebar-link i {
+        margin-right: 0;
+    }
+
+    .sidebar-collapsed .sidebar-dropdown {
+        display: none;
+    }
+}
+
+.btn-login:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(79, 111, 82, 0.3);
+}
+
+.divider {
+    text-align: center;
+    position: relative;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+}
+
+.divider span {
+    padding: 0 15px;
+    font-size: 14px;
+    color: #666;
+}
+
+.register-link {
+    text-align: center;
+    font-size: 15px;
+    color: #666;
+}
+
+.register-link a {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.register-link a:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+}
+
+.login-form .alert {
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.login-form .alert-danger {
+    background-color: #fee;
+    color: #e74c3c;
+    border-left: 4px solid #e74c3c;
+}
+
+.login-form .alert i {
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+/* Login Page Responsive Styles */
+@media (max-width: 768px) {
+    .login-wrapper {
+        flex-direction: column;
+        max-width: 500px;
+    }
+
+    .login-sidebar {
+        padding: 30px;
+    }
+
+    .login-form {
+        padding: 30px;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-page-body {
+        padding: 8px;
+        overflow-x: hidden;
+    }
+
+    .login-wrapper {
+        flex-direction: column;
+        max-width: 100%;
+        border-radius: 12px;
+        margin: 5px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-sidebar {
+        padding: 15px;
+        min-height: 180px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .brand-logo {
+        margin-bottom: 10px;
+    }
+
+    .brand-logo img {
+        width: 100px;
+        height: auto;
+        max-height: 50px;
+    }
+
+    .welcome-text {
+        margin-bottom: 10px;
+    }
+
+    .welcome-text h2 {
+        font-size: 18px;
+        margin-bottom: 5px;
+        text-align: center;
+    }
+
+    .welcome-text p {
+        font-size: 12px;
+        line-height: 1.4;
+        text-align: center;
+    }
+
+    .features-list {
+        display: none;
+    }
+
+    .login-form {
+        padding: 15px;
+        flex: auto;
+    }
+
+    .login-form-header {
+        margin-bottom: 15px;
+    }
+
+    .login-form-header h1 {
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+
+    .login-form-header p {
+        font-size: 12px;
+        line-height: 1.3;
+    }
+
+    .login-form .form-group {
+        margin-bottom: 12px;
+    }
+
+    .login-form .form-group label {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .login-form .form-control {
+        padding: 8px 30px 8px 10px;
+        font-size: 13px;
+        border-radius: 6px;
+    }
+
+    .login-form .input-icon {
+        top: 32px;
+        right: 10px;
+        font-size: 12px;
+    }
+
+    .login-form .form-check {
+        margin-bottom: 12px;
+    }
+
+    .login-form .form-check-input {
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+    }
+
+    .login-form .form-check-label {
+        font-size: 11px;
+    }
+
+    .extra-actions {
+        margin-bottom: 15px;
+    }
+
+    .forgot-password {
+        font-size: 11px;
+    }
+
+    .btn-login {
+        padding: 8px;
+        font-size: 14px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+    }
+
+    .divider {
+        margin: 12px 0;
+    }
+
+    .divider span {
+        font-size: 11px;
+        padding: 0 10px;
+    }
+
+    .register-link {
+        font-size: 12px;
+    }
+
+    .login-form .alert {
+        padding: 8px 10px;
+        margin-bottom: 12px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+
+    .login-form .alert i {
+        margin-right: 5px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 500px) {
+    .login-page-body {
+        padding: 8px;
+        overflow-x: hidden;
+    }
+
+    .login-wrapper {
+        flex-direction: column;
+        max-width: 100%;
+        border-radius: 12px;
+        margin: 5px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-sidebar {
+        padding: 15px;
+        min-height: 150px;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+
+    .brand-logo {
+        margin-bottom: 8px;
+    }
+
+    .brand-logo img {
+        width: 80px;
+        height: auto;
+        max-height: 45px;
+    }
+
+    .welcome-text {
+        margin-bottom: 8px;
+    }
+
+    .welcome-text h2 {
+        font-size: 16px;
+        margin-bottom: 4px;
+        text-align: center;
+    }
+
+    .welcome-text p {
+        font-size: 11px;
+        line-height: 1.3;
+        text-align: center;
+    }
+
+    .features-list {
+        display: none;
+    }
+
+    .login-form {
+        padding: 12px;
+        flex: auto;
+    }
+
+    .login-form-header {
+        text-align: center;
+        margin-bottom: 12px;
+    }
+
+    .login-form-header h1 {
+        font-size: 16px;
+        margin-bottom: 3px;
+    }
+
+    .login-form-header p {
+        font-size: 11px;
+        line-height: 1.2;
+    }
+
+    .login-form .form-group {
+        margin-bottom: 10px;
+    }
+
+    .login-form .form-group label {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .login-form .form-control {
+        padding: 8px 28px 8px 10px;
+        font-size: 13px;
+        border-radius: 6px;
+    }
+
+    .login-form .input-icon {
+        top: 30px;
+        right: 8px;
+        font-size: 12px;
+    }
+
+    .login-form .form-check {
+        margin-bottom: 10px;
+    }
+
+    .login-form .form-check-input {
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+    }
+
+    .login-form .form-check-label {
+        font-size: 11px;
+    }
+
+    .extra-actions {
+        margin-bottom: 10px;
+    }
+
+    .forgot-password {
+        font-size: 11px;
+    }
+
+    .btn-login {
+        padding: 8px;
+        font-size: 13px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+    }
+
+    .divider {
+        margin: 8px 0;
+    }
+
+    .divider span {
+        font-size: 10px;
+        padding: 0 8px;
+    }
+
+    .register-link {
+        font-size: 11px;
+    }
+
+    .back-home-link {
+        margin-top: 8px !important;
+    }
+
+    .back-home-link a {
+        font-size: 11px !important;
+    }
+
+    .login-form .alert {
+        padding: 8px 10px;
+        margin-bottom: 10px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+
+    .login-form .alert i {
+        margin-right: 5px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 320px) {
+    .login-page-body {
+        padding: 5px;
+    }
+
+    .login-wrapper {
+        margin: 0;
+        border-radius: 8px;
+    }
+
+    .login-sidebar {
+        padding: 10px;
+        min-height: 130px;
+        max-height: 150px;
+    }
+
+    .brand-logo img {
+        max-width: 70px;
+        max-height: 35px;
+    }
+
+    .welcome-text h2 {
+        font-size: 14px;
+    }
+
+    .welcome-text p {
+        font-size: 10px;
+    }
+
+    .login-form {
+        padding: 10px;
+    }
+
+    .login-form-header h1 {
+        font-size: 14px;
+    }
+
+    .login-form-header p {
+        font-size: 10px;
+    }
+
+    .login-form .form-control {
+        padding: 7px 26px 7px 8px;
+        font-size: 12px;
+    }
+
+    .login-form .input-icon {
+        top: 28px;
+    }
+
+    .login-form .form-group {
+        margin-bottom: 8px;
+    }
+
+    .btn-login {
+        padding: 7px;
+        font-size: 12px;
+    }
+
+    .divider span {
+        font-size: 9px;
+    }
+
+    .register-link {
+        font-size: 10px;
+    }
+
+    .back-home-link a {
+        font-size: 10px !important;
+    }
+}
+
+/* ===========================================
+   ADMIN UTILITY CLASSES
+   =========================================== */
+
+/* Border Left Utilities */
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+}
+
+.border-left-secondary {
+    border-left: 0.25rem solid #858796 !important;
+}
+
+.border-left-emerald {
+    border-left: 0.25rem solid #b910b9 !important;
+}
+
+/* ===========================================
+   EQUAL HEIGHT CARDS SYSTEM
+   Only for stat cards in grid layout
+   =========================================== */
+
+/* Step 1: Make columns stretch in grid rows */
+.row.mb-4 > [class*='col-'],
+.row.g-3 > [class*='col-'] {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Step 2: Make cards fill column height (ONLY in grid) */
+.row.mb-4 > [class*='col-'] > .card,
+.row.g-3 > [class*='col-'] > .card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Step 3: Card with h-100 class always get full height */
+.card.h-100 {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Step 4: Special cards (admin-pemilik-card, pemilik-card) in grid */
+.row.mb-4 > [class*='col-'] > .admin-pemilik-card,
+.row.mb-4 > [class*='col-'] > .pemilik-card,
+.row.g-3 > [class*='col-'] > .admin-pemilik-card,
+.row.g-3 > [class*='col-'] > .pemilik-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Admin-card and pemilik-card with h-100 should be full height */
+.admin-card.h-100,
+.pemilik-card.h-100,
+.admin-pemilik-card.h-100 {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Step 5: Card body flexibility */
+.row.mb-4 > [class*='col-'] > .card > .card-body,
+.row.g-3 > [class*='col-'] > .card > .card-body,
+.card.h-100 > .card-body {
+    flex: 1 1 auto;
+}
+
+.row.mb-4 > [class*='col-'] > .admin-pemilik-card > .card-body,
+.row.g-3 > [class*='col-'] > .admin-pemilik-card > .card-body,
+.row.mb-4 > [class*='col-'] > .pemilik-card > .pemilik-card-body,
+.row.g-3 > [class*='col-'] > .pemilik-card > .pemilik-card-body {
+    flex: 1 1 auto;
+}
+
+.admin-card.h-100 > .admin-card-body,
+.pemilik-card.h-100 > .pemilik-card-body,
+.admin-pemilik-card.h-100 > .card-body {
+    flex: 1 1 auto;
+}
+
+/* Safeguard: Reset height for welcome cards and standalone cards */
+.card.shadow-sm:not([class*='border-left']):not(.h-100),
+.card.border-0:not([class*='border-left']):not(.h-100),
+.welcome-section {
+    height: auto !important;
+}
+
+/* Safeguard: Cards NOT in grid system should use auto height */
+body > .card:not(.h-100),
+.container > .card:not(.h-100):not([class*='border-left']),
+.container-fluid > .card:not(.h-100):not([class*='border-left']) {
+    height: auto !important;
+}
+
+/* Additional fix for border-left cards */
+.card[class*='border-left-'] {
+    height: 100% !important;
+}
+
+/* Ensure minimum height for all stat cards */
+.card[class*='border-left-'].py-2 {
+    min-height: 120px;
+}
+
+/* Fix alignment inside stat cards */
+.card[class*='border-left-'] .card-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.card[class*='border-left-'] .row.no-gutters {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Ensure icon is at the far right and centered */
+.card[class*='border-left-'] .col-auto {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card[class*='border-left-'] .col.mr-2 {
+    flex: 1;
+    margin-right: 0.5rem;
+}
+
+/* Ensure consistent font sizes across all stat cards */
+.card[class*='border-left-'] .text-xs {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.card[class*='border-left-'] .h5 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+/* Mobile responsive - maintain equal heights */
+@media (max-width: 767px) {
+    .row.mb-4 > [class*='col-6'],
+    .row.g-3 > [class*='col-6'] {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1rem;
+    }
+
+    .card[class*='border-left-'].py-2 {
+        min-height: 110px;
+    }
+
+    .card[class*='border-left-'] .text-xs {
+        font-size: 0.65rem;
+    }
+
+    .card[class*='border-left-'] .h5 {
+        font-size: 1.1rem;
+    }
+
+    .card[class*='border-left-'] .fa-2x {
+        font-size: 1.3em !important;
+    }
+
+    /* Adjust icon wrapper in border-left cards */
+    .card[class*='border-left-'] .col-auto {
+        padding-left: 0.5rem;
+    }
+
+    /* Tighten spacing in no-gutters rows */
+    .card[class*='border-left-'] .row.no-gutters {
+        gap: 0.5rem;
+    }
+
+    /* Reduce margin in stat cards */
+    .card[class*='border-left-'] .col.mr-2 {
+        margin-right: 0.5rem !important;
+    }
+
+    /* Adjust card body padding for border-left cards */
+    .card[class*='border-left-'].py-2 .card-body {
+        padding: 0.75rem 1rem !important;
+    }
+
+    /* Icon container responsive - pemilik dashboard style */
+    .card .bg-primary.bg-opacity-10,
+    .card .bg-success.bg-opacity-10,
+    .card .bg-info.bg-opacity-10,
+    .card .bg-warning.bg-opacity-10,
+    .card .bg-danger.bg-opacity-10,
+    .card .bg-secondary.bg-opacity-10 {
+        padding: 0.5rem !important;
+    }
+
+    /* Icon size responsive */
+    .card .bg-opacity-10 .fs-4 {
+        font-size: 1rem !important;
+    }
+
+    /* Text sizes in pemilik dashboard cards */
+    .card .d-flex .small {
+        font-size: 0.7rem !important;
+    }
+
+    .card .d-flex h3 {
+        font-size: 1.2rem !important;
+    }
+
+    .card .d-flex small {
+        font-size: 0.65rem !important;
+    }
+
+    /* Card body padding adjustment */
+    .card.shadow.h-100.py-2 .card-body {
+        padding: 0.75rem !important;
+    }
+
+    /* Adjust flex gap */
+    .card .d-flex.justify-content-between {
+        gap: 0.5rem;
+    }
+}
+
+/* Very small mobile devices */
+@media (max-width: 480px) {
+    .card .bg-opacity-10 {
+        padding: 0.4rem !important;
+    }
+
+    .card .bg-opacity-10 .fs-4 {
+        font-size: 0.9rem !important;
+    }
+
+    .card .d-flex h3 {
+        font-size: 1rem !important;
+    }
+
+    .card .d-flex .small {
+        font-size: 0.65rem !important;
+    }
+
+    .card .d-flex small {
+        font-size: 0.6rem !important;
+    }
+
+    .card.shadow.h-100.py-2 .card-body {
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    .card[class*='border-left-'].py-2 {
+        min-height: 95px;
+    }
+
+    .card[class*='border-left-'].py-2 .card-body {
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    .card[class*='border-left-'] .fa-2x {
+        font-size: 1.2em !important;
+    }
+
+    .card[class*='border-left-'] .row.no-gutters {
+        gap: 0.4rem;
+    }
+}
+
+/* Extra responsive adjustments for icon containers */
+@media (max-width: 767px) {
+    /* Ensure icon container doesn't shrink */
+    .card .bg-opacity-10.rounded {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5rem;
+        min-height: 2.5rem;
+    }
+
+    /* Better alignment for content */
+    .card .d-flex.justify-content-between.align-items-start {
+        align-items: center !important;
+    }
+
+    /* Prevent text overflow in mobile */
+    .card .d-flex > div:first-child {
+        flex: 1;
+        min-width: 0;
+        max-width: calc(100% - 3rem);
+    }
+
+    /* Allow text to wrap properly */
+    .card .d-flex h3 {
+        word-wrap: break-word;
+        word-break: break-word;
+        line-height: 1.3;
+    }
+
+    .card .d-flex .small,
+    .card .d-flex small {
+        word-wrap: break-word;
+        word-break: break-word;
+        line-height: 1.2;
+        display: block;
+    }
+}
+
+@media (max-width: 480px) {
+    .card .bg-opacity-10.rounded {
+        min-width: 2rem;
+        min-height: 2rem;
+    }
+
+    /* Reduce row gap for better spacing */
+    .row.g-3 {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.5rem;
+    }
+}
+
+/* Tablet responsive */
+@media (min-width: 768px) and (max-width: 991px) {
+    .card[class*='border-left-'].py-2 {
+        min-height: 115px;
+    }
+
+    /* Icon containers for pemilik dashboard */
+    .card .bg-opacity-10 {
+        padding: 0.7rem !important;
+    }
+
+    .card .bg-opacity-10 .fs-4 {
+        font-size: 1.1rem !important;
+    }
+
+    .card .d-flex h3 {
+        font-size: 1.3rem !important;
+    }
+
+    .card .d-flex .small {
+        font-size: 0.75rem !important;
+    }
+
+    .card .d-flex small {
+        font-size: 0.7rem !important;
+    }
+
+    .card.shadow.h-100.py-2 .card-body {
+        padding: 0.85rem !important;
+    }
+
+    /* Border-left cards */
+    .card[class*='border-left-'] .fa-2x {
+        font-size: 1.6em !important;
+    }
+
+    .card[class*='border-left-'].py-2 .card-body {
+        padding: 0.85rem 1.1rem !important;
+    }
+}
+
+/* Text Color Utilities */
+.text-emerald {
+    color: #b910b9 !important;
+}
+
+.text-secondary {
+    color: #858796 !important;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+/* ===========================================
+   NOTIFICATION STYLES
+   =========================================== */
+
+/* Notification Styles */
+.notification {
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    animation: slideIn 0.3s ease-out;
+    opacity: 0;
+    transform: translateX(100%);
+    animation-fill-mode: forwards;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification.fade-out {
+    animation: slideOut 0.5s ease-in forwards;
+}
+
+.notification-icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.notification-content h5 {
+    margin: 0 0 0.25rem;
+    font-weight: 600;
+}
+
+.notification-content p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.notification-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: inherit;
+    opacity: 0.7;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.notification-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 5px solid #28a745;
+}
+
+.notification-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 5px solid #dc3545;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
