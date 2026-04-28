@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Alihkan semua permintaan ke folder public
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# 2. Blokir akses ke file sensitif demi keamanan
+<Files .env>
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files composer.json>
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files composer.lock>
+    Order allow,deny
+    Deny from all
+</Files>

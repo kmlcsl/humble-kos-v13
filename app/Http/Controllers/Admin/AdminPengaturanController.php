@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules;
 
-class AdminSettingController extends Controller
+class AdminPengaturanController extends Controller
 {
     /**
      * Display general settings.

@@ -135,10 +135,10 @@
                         </li>
                         <li>
                             <a class="dropdown-item text-danger" href="#"
-                                onclick="event.preventDefault(); document.getElementById('header-logout-form').submit();">
+                                onclick="event.preventDefault(); document.getElementById('pemilik-logout-form').submit();">
                                 <i class="fas fa-sign-out-alt me-2"></i> Logout
                             </a>
-                            <form id="header-logout-form" action="{{ route('pemilik.logout') }}" method="POST" class="d-none">
+                            <form id="pemilik-logout-form" action="{{ route('pemilik.logout') }}" method="POST" class="d-none">
                                 @csrf
                             </form>
                         </li>

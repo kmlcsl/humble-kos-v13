@@ -323,91 +323,58 @@
         });
     </script>
 
-    <!-- Robust Sidebar Toggle Script - Critical Fallback -->
+    <!-- Clean Sidebar Toggle Script -->
     <script>
-        // Initialize immediately AND on DOMContentLoaded
-        function initSidebarToggle() {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const closeSidebar = document.getElementById('closeSidebar');
-            const mobileOverlay = document.getElementById('mobileOverlay');
-            const body = document.body;
+        (function() {
+            function initSidebarToggle() {
+                const sidebarToggle = document.getElementById('sidebarToggle');
+                const closeSidebar = document.getElementById('closeSidebar');
+                const mobileOverlay = document.getElementById('mobileOverlay');
+                const body = document.body;
 
-            if (sidebarToggle) {
-                // Click event
+                if (!sidebarToggle || sidebarToggle.dataset.initialized) return;
+                sidebarToggle.dataset.initialized = "true";
+
+                // Single reliable click handler
                 sidebarToggle.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    e.stopImmediatePropagation();
                     body.classList.toggle('sidebar-active');
-                }, true);
-                
-                // Touch event for mobile (with passive handling)
-                sidebarToggle.addEventListener('touchstart', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }, { passive: false, capture: false });
-                
-                sidebarToggle.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    body.classList.toggle('sidebar-active');
-                }, { passive: false, capture: false });
-
-                // Pointer event (modern mobile)
-                sidebarToggle.addEventListener('pointerdown', function(e) {
-                    e.preventDefault();
-                }, false);
-
-                sidebarToggle.addEventListener('pointerup', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    body.classList.toggle('sidebar-active');
-                }, false);
-            }
-
-            if (closeSidebar) {
-                closeSidebar.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    body.classList.remove('sidebar-active');
-                }, true);
-            }
-
-            if (mobileOverlay) {
-                mobileOverlay.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    body.classList.remove('sidebar-active');
-                }, true);
-            }
-
-            // Close sidebar when clicking nav links on mobile (exclude dropdown toggles and submenu links)
-            const navLinks = document.querySelectorAll('.nav-link, .demo-link, .sidebar-link');
-            navLinks.forEach(function(link) {
-                link.addEventListener('click', function() {
-                    // Don't close sidebar if it's a dropdown toggle or submenu link
-                    const isDropdownToggle = this.classList.contains('dropdown-toggle');
-                    const isSubmenuLink = this.closest('.submenu');
-
-                    if (window.innerWidth <= 992 && !isDropdownToggle && !isSubmenuLink) {
-                        body.classList.remove('sidebar-active');
-                    }
                 });
-            });
-        }
 
-        // Initialize as soon as DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initSidebarToggle);
-        } else {
-            initSidebarToggle();
-        }
+                if (closeSidebar) {
+                    closeSidebar.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        body.classList.remove('sidebar-active');
+                    });
+                }
 
-        // Also initialize after a delay to catch any dynamic content
-        setTimeout(initSidebarToggle, 300);
-        
-        // Re-initialize on window resize
-        window.addEventListener('resize', initSidebarToggle, { passive: true });
+                if (mobileOverlay) {
+                    mobileOverlay.addEventListener('click', function(e) {
+                        body.classList.remove('sidebar-active');
+                    });
+                }
+
+                // Close sidebar when clicking nav links on mobile
+                const navLinks = document.querySelectorAll('.nav-link, .sidebar-link');
+                navLinks.forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        const isDropdownToggle = this.classList.contains('dropdown-toggle');
+                        if (window.innerWidth <= 992 && !isDropdownToggle) {
+                            body.classList.remove('sidebar-active');
+                        }
+                    });
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initSidebarToggle);
+            } else {
+                initSidebarToggle();
+            }
+            // Fallback for late-rendering
+            setTimeout(initSidebarToggle, 500);
+        })();
     </script>
 </body>
 

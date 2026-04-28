@@ -27,6 +27,7 @@ class UserDashboardController extends Controller
         $wishlist_count = 0;
         $active_booking_count = 0;
         $pending_booking_count = 0;
+        $notification_count = 0;
         $recent_bookings = collect();
         $favorite_kosan_ids = [];
 
@@ -40,6 +41,10 @@ class UserDashboardController extends Controller
 
             $pending_booking_count = BookingKosan::where('user_id', $user->user_id)
                 ->where('status_booking', 'pending')
+                ->count();
+
+            $notification_count = \App\Models\Notifikasi::where('user_id', $user->user_id)
+                ->where('is_read', false)
                 ->count();
 
             $recent_bookings = BookingKosan::where('user_id', $user->user_id)
@@ -65,6 +70,7 @@ class UserDashboardController extends Controller
             'wishlist_count' => $wishlist_count,
             'active_booking_count' => $active_booking_count,
             'pending_booking_count' => $pending_booking_count,
+            'notification_count' => $notification_count,
             'recent_bookings' => $recent_bookings,
             'recommended_kosans' => $recommended_kosans,
             'nearby_kosans' => $nearby_kosans,

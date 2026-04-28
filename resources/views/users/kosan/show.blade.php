@@ -54,9 +54,9 @@
                 <div class="kosan-gallery card" style="background-color: #e6e9ee; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
                     <div class="main-image-container">
                         @if ($mainImagePath)
-                            <img src="{{ asset('storage/' . $mainImagePath) }}" alt="{{ $kosan->nama_kosan }}" class="main-image" id="mainImage" style="border: 2px solid #ddd; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); width: 100%; height: 500px; object-fit: cover; border-radius: 8px;">
+                            <img src="{{ asset('storage/' . $mainImagePath) }}" alt="{{ $kosan->nama_kosan }}" class="main-image" id="mainImage" style="border: 2px solid #ddd; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); width: 100%; object-fit: cover; border-radius: 8px;">
                         @else
-                            <img src="{{ asset('images/no-image.jpg') }}" alt="{{ $kosan->nama_kosan }}" class="main-image" style="border: 2px solid #ddd; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); width: 100%; height: 500px; object-fit: cover; border-radius: 8px;">
+                            <img src="{{ asset('images/no-image.jpg') }}" alt="{{ $kosan->nama_kosan }}" class="main-image" style="border: 2px solid #ddd; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); width: 100%; object-fit: cover; border-radius: 8px;">
                         @endif
                     </div>
 
@@ -79,75 +79,60 @@
                 </div>
 
                 <!-- Kosan Title & Basic Info -->
-                <div class="kosan-info card mt-4" style="background-color: #e6e9ee;">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
+                <div class="kosan-info card mt-4 border-0 shadow-sm" style="background-color: #f8fafc; border-radius: 16px;">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-lg-8">
                                 <h1 class="kosan-detail-title">{{ $kosan->nama_kosan }}</h1>
-                                <p class="kosan-detail-address">
-                                    <i class="fas fa-map-marker-alt me-2"></i>
-                                    {{ $kosan->alamat }}, {{ $kosan->kecamatan }}, {{ $kosan->kota }},
-                                    {{ $kosan->provinsi }}
+                                
+                                <div class="kosan-rating-mini d-flex align-items-center mb-3">
+                                    <div class="text-warning me-2">
+                                        @php
+                                            $ratingRata = $kosan->rating_rata ?? 0;
+                                            $roundedRating = round($ratingRata);
+                                        @endphp
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            <i class="fas fa-star{{ $i <= $roundedRating ? '' : '-o' }} {{ $i <= $roundedRating ? '' : 'text-muted opacity-25' }}"></i>
+                                        @endfor
+                                    </div>
+                                    <span class="fw-bold me-1" style="font-size: 0.95rem;">{{ number_format($ratingRata, 1) }}</span>
+                                    <span class="text-muted" style="font-size: 0.85rem;">({{ ($kosan->ulasanKosan ?? collect())->count() }} ulasan)</span>
+                                </div>
+
+                                <p class="kosan-detail-address d-flex align-items-start">
+                                    <i class="fas fa-map-marker-alt me-2 text-danger mt-1"></i>
+                                    <span>{{ $kosan->alamat }}, {{ $kosan->kecamatan }}, {{ $kosan->kota }}</span>
                                 </p>
+
+                                <div class="d-flex flex-wrap gap-2 mb-2 mb-lg-0">
+                                    <span class="badge {{ $kosan->tipe_kosan == 'putra' ? 'bg-primary' : ($kosan->tipe_kosan == 'putri' ? 'bg-danger' : 'bg-success') }} px-3 py-2 rounded-pill shadow-sm">
+                                        Kos {{ ucfirst($kosan->tipe_kosan) }}
+                                    </span>
+                                    @php
+                                        $kamarsList = $kosan?->kamars ?? [];
+                                        $availableCountTitle = collect($kamarsList)->filter(fn($r) => $r->is_available ?? false)->count();
+                                    @endphp
+                                    <span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-sm">
+                                        <i class="fas fa-door-open me-1 text-primary"></i> {{ $availableCountTitle }} Kamar Tersedia
+                                    </span>
+                                    @if ($kosan->kos_unggulan)
+                                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm">
+                                            <i class="fas fa-star me-1"></i>Unggulan
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
-                            <div class="d-flex">
-                                <button class="btn btn-outline-primary me-2 share-button" onclick="shareKosan()">
-                                    <i class="fas fa-share-alt me-1"></i> Bagikan
+                            <div class="col-lg-4 d-flex justify-content-lg-end gap-2 mt-4 mt-lg-0">
+                                <button class="btn btn-white share-button flex-fill flex-lg-grow-0" onclick="shareKosan()">
+                                    <i class="fas fa-share-alt me-2 text-primary"></i>Bagikan
                                 </button>
                                 <button
-                                    class="btn {{ $kosan->difavoritkanOleh(Auth::id()) ? 'btn-danger' : 'btn-outline-danger' }} wishlist-btn"
+                                    class="btn {{ $kosan->difavoritkanOleh(Auth::id()) ? 'btn-danger' : 'btn-outline-danger' }} wishlist-btn flex-fill flex-lg-grow-0"
                                     data-kosan-id="{{ $kosan->kosan_id }}"
                                     data-favorit-url="{{ route('users.kosan.toggle-favorite', $kosan->kosan_id) }}">
-                                    <i class="fa{{ $kosan->difavoritkanOleh(Auth::id()) ? 's' : 'r' }} fa-heart me-1"></i>
+                                    <i class="fa{{ $kosan->difavoritkanOleh(Auth::id()) ? 's' : 'r' }} fa-heart me-2"></i>
                                     <span>Favorit</span>
                                 </button>
-                            </div>
-                        </div>
-
-                        <div class="kosan-badges mt-3">
-                            <span
-                                class="badge {{ $kosan->tipe_kosan == 'putra' ? 'bg-primary' : ($kosan->tipe_kosan == 'putri' ? 'bg-danger' : 'bg-success') }}">
-                                Kos {{ ucfirst($kosan->tipe_kosan) }}
-                            </span>
-                            @php
-                                $kamarsList = $kosan?->kamars ?? [];
-                                $roomsTitle = collect($kamarsList);
-                                $availableCountTitle = $roomsTitle->filter(function($r) {
-                                    return $r && method_exists($r, '__get') && ($r->is_available ?? false);
-                                })->count();
-                            @endphp
-                            @if ($availableCountTitle > 0)
-                                <span class="badge bg-info">{{ $availableCountTitle }} kamar tersedia</span>
-                            @else
-                                <span class="badge bg-secondary">Tidak tersedia</span>
-                            @endif
-                            @if ($kosan->kos_unggulan)
-                                <span class="badge bg-warning text-dark">Kos Unggulan</span>
-                            @endif
-                            @if ($kosan->persentase_diskon > 0)
-                                <span class="badge bg-danger">Diskon {{ $kosan->persentase_diskon }}%</span>
-                            @endif
-                        </div>
-
-                        <div class="kosan-rating-info mt-3">
-                            <div class="d-flex align-items-center">
-                                <div class="rating-stars me-2">
-                                    @php
-                                        $ratingRata = $kosan->rating_rata ?? 0;
-                                        $roundedRating = round($ratingRata);
-                                    @endphp
-                                    @for ($i = 1; $i <= 5; $i++)
-                                        @if ($i <= $roundedRating)
-                                            <i class="fas fa-star"></i>
-                                        @else
-                                            <i class="far fa-star"></i>
-                                        @endif
-                                    @endfor
-                                </div>
-                                <div class="rating-number">
-                                    <span class="fw-bold">{{ number_format($ratingRata, 1) }}</span>
-                                    <span class="text-muted">({{ ($kosan->ulasanKosan ?? collect())->count() }} ulasan)</span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -501,8 +486,13 @@
                         </div>
 
                         <div class="booking-date mt-3">
-                            <label for="bookingDate" class="form-label">Tanggal Mulai</label>
-                            <input type="date" class="form-control" id="bookingDate" min="{{ date('Y-m-d') }}">
+                            <label for="bookingDate" class="form-label fw-bold">Tanggal Mulai</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="fas fa-calendar-alt text-primary"></i>
+                                </span>
+                                <input type="date" class="form-control border-start-0 ps-0" id="bookingDate" min="{{ date('Y-m-d') }}">
+                            </div>
                         </div>
 
                         <div class="total-price mt-3">
@@ -757,7 +747,7 @@
 
         .main-image {
             width: 100%;
-            height: 400px;
+            height: 350px; /* Diperpendek dari 400px/500px */
             object-fit: cover;
             display: block;
         }
@@ -794,15 +784,29 @@
 
         /* Kosan Info Styles */
         .kosan-detail-title {
-            font-size: 24px;
+            font-size: 1.75rem;
             font-weight: 700;
-            color: var(--primary-dark);
-            margin-bottom: 5px;
+            color: #1e293b;
+            margin-bottom: 8px;
+            line-height: 1.2;
         }
 
         .kosan-detail-address {
-            color: #6c757d;
-            font-size: 14px;
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .kosan-detail-title {
+                font-size: 1.35rem;
+            }
+            .kosan-detail-address {
+                font-size: 0.85rem;
+            }
+            .card-body.p-4 {
+                padding: 1.25rem !important;
+            }
         }
 
         .kosan-badges {
@@ -1090,7 +1094,23 @@
             color: #495057;
         }
 
-        /* Reviews Styles */
+        /* Booking Date Input Style */
+        .booking-date .input-group-text {
+            border-radius: 10px 0 0 10px;
+            padding-left: 15px;
+        }
+        .booking-date .form-control {
+            border-radius: 0 10px 10px 0;
+            height: 45px;
+        }
+        .booking-date .form-control:focus {
+            box-shadow: none;
+            border-color: #dee2e6;
+        }
+        .booking-date .input-group:focus-within {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+            border-radius: 10px;
+        }
         .average-rating {
             display: flex;
             flex-direction: column;
@@ -1100,16 +1120,23 @@
         }
 
         .rating-number {
-            font-size: 48px;
+            font-size: 42px; /* Diperkecil dari 48px */
             font-weight: 700;
             line-height: 1;
             color: var(--primary-dark);
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         @media (max-width: 767.98px) {
             .rating-number {
-                font-size: 38px;
+                font-size: 32px; /* Diperkecil lagi untuk mobile */
+            }
+            .kosan-title-container h1 {
+                font-size: 1.5rem !important;
+                line-height: 1.3;
+            }
+            .basic-info-item {
+                font-size: 0.85rem;
             }
         }
 
@@ -1608,7 +1635,7 @@
         /* Responsive Adjustments */
         @media (max-width: 767.98px) {
             .main-image {
-                height: 250px;
+                height: 220px; /* Diperpendek dari 250px */
             }
 
             .thumbnails-container {
@@ -1652,44 +1679,46 @@
         }
 
         /* Override untuk tombol favorit di detail kosan */
-        .kosan-info .wishlist-btn {
+        .kosan-info .wishlist-btn, .kosan-info .share-button {
             position: static;
             width: auto;
-            height: auto;
-            border-radius: 8px;
-            font-weight: 500;
-            padding: 8px 16px;
-            min-width: 110px;
+            height: 40px !important;
+            border-radius: 50px !important;
+            font-weight: 600;
+            font-size: 0.85rem !important;
+            padding: 0 20px !important;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            background-color: white; /* Default background */
+            color: #495057;
         }
 
-        .kosan-info .wishlist-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .kosan-info .wishlist-btn i {
-            margin-right: 6px;
-            font-size: 16px;
-        }
-
-        .kosan-info .wishlist-btn.btn-outline-danger:hover {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: #dc3545;
-        }
-
+        /* Pastikan btn-danger tetap merah */
         .kosan-info .wishlist-btn.btn-danger {
-            background-color: #dc3545;
-            border-color: #dc3545;
-            color: white;
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .kosan-info .wishlist-btn.btn-danger i {
+            color: white !important;
         }
 
-        .kosan-info .wishlist-btn.active i {
-            color: white;
+        .kosan-info .wishlist-btn.btn-danger:hover {
+            background-color: #bb2d3b !important;
+            border-color: #b02a37 !important;
+        }
+
+        @media (max-width: 576px) {
+            .kosan-info .wishlist-btn, .kosan-info .share-button {
+                font-size: 0.8rem !important;
+                padding: 0 12px !important;
+                height: 36px !important;
+            }
         }
 
         /* Animasi tambahan */
@@ -1792,12 +1821,36 @@
                 font-size: 10px;
             }
         }
+        #bookingSubmitBtn:disabled {
+            cursor: not-allowed;
+            pointer-events: none;
+            opacity: 0.6;
+        }
     </style>
 @endpush
 
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
+        // Data Fasilitas Kamar Global
+        window.kamarFacilities = {
+            @foreach ($kosan->kamars as $room)
+                @php
+                    $kamarId = $room->kamar_id;
+                    $fasilitasKamar = $room->fasilitas;
+                @endphp
+                "{{ $kamarId }}": [
+                    @foreach ($fasilitasKamar as $fas)
+                        {
+                            "id": {{ $fas->fasilitas_id }},
+                            "nama": "{{ $fas->nama_fasilitas }}",
+                            "icon": "{{ $fas->icon_fasilitas ?? 'fas fa-check-circle' }}"
+                        }{{ !$loop->last ? ',' : '' }}
+                    @endforeach
+                ]{{ !$loop->last ? ',' : '' }}
+            @endforeach
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             // Get the main container and read the kosanId from its data attribute.
             const container = document.getElementById('kosan-detail-container');
@@ -1919,120 +1972,94 @@
             }
 
             // Room selection handlers
+            let selectedKamarIds = [];
+
             if (roomButtons && roomButtons.length) {
                 roomButtons.forEach(btn => {
                     btn.addEventListener('click', function() {
                         if (this.classList.contains('disabled')) return;
-                        selectedKamarId = this.getAttribute('data-kamar-id');
-                        const nomorKamar = this.getAttribute('data-nomor');
-                        const roomImage = this.getAttribute('data-image');
+                        
+                        const kamarId = this.getAttribute('data-kamar-id');
+                        const targetCount = parseInt(jumlahKamarSelect.value) || 1;
 
-                        if (inputKamarId) inputKamarId.value = selectedKamarId;
-                        roomButtons.forEach(b => b.classList.remove('room-card-active'));
-                        this.classList.add('room-card-active');
-
-                        // Change main image
-                        if (roomImage) {
-                            changeMainImage(roomImage, null);
-                            // Scroll back to main image for visibility on mobile
-                            if (window.innerWidth < 992) {
-                                document.querySelector('.main-image-container')?.scrollIntoView({
-                                    behavior: 'smooth',
-                                    block: 'center'
-                                });
+                        if (selectedKamarIds.includes(kamarId)) {
+                            // Deselect if already selected
+                            selectedKamarIds = selectedKamarIds.filter(id => id !== kamarId);
+                            this.classList.remove('room-card-active');
+                        } else {
+                            // Select if not at limit
+                            if (selectedKamarIds.length < targetCount) {
+                                selectedKamarIds.push(kamarId);
+                                this.classList.add('room-card-active');
+                            } else if (targetCount === 1) {
+                                // If limit is 1, replace selection
+                                roomButtons.forEach(b => b.classList.remove('room-card-active'));
+                                selectedKamarIds = [kamarId];
+                                this.classList.add('room-card-active');
+                            } else {
+                                alert(`Anda sudah memilih ${targetCount} kamar. Batalkan pilihan kamar lain jika ingin mengubah.`);
                             }
+                        }
+
+                        if (inputKamarId) inputKamarId.value = selectedKamarIds.join(',');
+                        
+                        const roomImage = this.getAttribute('data-image');
+                        if (roomImage && selectedKamarIds.includes(kamarId)) {
+                            changeMainImage(roomImage, null);
                         }
 
                         if (window.recalc) {
                             window.recalc();
                         }
                         toggleSubmitBySelection();
-                        displayRoomFacilities(selectedKamarId, nomorKamar);
+                        
+                        if (selectedKamarIds.length > 0) {
+                            const lastKamarId = selectedKamarIds[selectedKamarIds.length - 1];
+                            const lastBtn = document.querySelector(`.room-card[data-kamar-id="${lastKamarId}"]`);
+                            if (window.displayRoomFacilities) {
+                                window.displayRoomFacilities(lastKamarId, lastBtn.getAttribute('data-nomor'));
+                            }
+                        }
                     });
                 });
             }
 
-            function displayRoomFacilities(kamarId, nomorKamar) {
-                const facilitiesSection = document.getElementById('selectedRoomFacilities');
-                const roomNumberSpan = document.getElementById('selectedRoomNumber');
-                const facilitiesList = document.getElementById('facilitiesList');
-                const facilitiesCount = document.getElementById('facilitiesCount');
-
-                // Get facilities data from __initBookingCalc scope
-                const facilities = window.kamarFacilities?.[kamarId] || [];
-
-                if (facilities.length > 0) {
-                    facilitiesSection.style.display = 'block';
-                    roomNumberSpan.textContent = nomorKamar;
-                    facilitiesCount.innerHTML =
-                        `<i class="fas fa-check-circle me-1"></i>${facilities.length} Fasilitas`;
-
-                    let facilitiesHTML = '';
-                    facilities.forEach((fas, index) => {
-                        // Check if icon is an image path or font-awesome class
-                        const isImageIcon = fas.icon && (fas.icon.includes('/') || fas.icon.includes('.'));
-
-                        facilitiesHTML += `
-                            <div class="col-lg-4 col-md-6 col-sm-6 col-12">
-                                <div class="facility-card">
-                                    <div class="facility-card-inner">
-                                        <div class="facility-icon-wrapper">
-                                            ${isImageIcon
-                                                ? `<img src="${fas.icon.startsWith('http') ? fas.icon : '/storage/' + fas.icon}" alt="${fas.nama}" class="facility-icon-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                                       <div class="facility-icon-fallback" style="display:none;"><i class="fas fa-check-circle"></i></div>`
-                                                : `<i class="${fas.icon || 'fas fa-check-circle'} facility-icon-font"></i>`
-                                            }
-                                        </div>
-                                        <div class="facility-info">
-                                            <h6 class="facility-name">${fas.nama}</h6>
-                                            <div class="facility-badge">
-                                                <i class="fas fa-check me-1"></i>Tersedia
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    facilitiesList.innerHTML = facilitiesHTML;
-                } else {
-                    facilitiesSection.style.display = 'block';
-                    roomNumberSpan.textContent = nomorKamar;
-                    facilitiesCount.innerHTML = `<i class="fas fa-exclamation-circle me-1"></i>0 Fasilitas`;
-                    facilitiesList.innerHTML = `
-                        <div class="col-12">
-                            <div class="empty-facilities-message">
-                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                                <h6 class="text-muted">Tidak ada fasilitas untuk kamar ini</h6>
-                                <p class="text-muted small mb-0">Silakan pilih kamar lain untuk melihat fasilitas yang tersedia.</p>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // Smooth scroll to facilities section
-                setTimeout(() => {
-                    facilitiesSection.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'nearest'
-                    });
-                }, 100);
+            // Reset selection when jumlah kamar changes
+            if (jumlahKamarSelect) {
+                jumlahKamarSelect.addEventListener('change', function() {
+                    selectedKamarIds = [];
+                    roomButtons.forEach(b => b.classList.remove('room-card-active'));
+                    if (inputKamarId) inputKamarId.value = '';
+                    toggleSubmitBySelection();
+                    if (window.recalc) window.recalc();
+                });
             }
 
             function toggleSubmitBySelection() {
                 const submitBtn = document.getElementById('bookingSubmitBtn');
                 const hasActive = {{ $hasActiveBooking ?? false ? 'true' : 'false' }};
+                const targetCount = parseInt(jumlahKamarSelect?.value) || 1;
+                
                 if (!submitBtn) return;
-                const selectedId = (document.getElementById('inputKamarId')?.value || '').trim();
-                const mustDisable = hasActive || !selectedId;
+                
+                const isCorrectCount = selectedKamarIds.length === targetCount;
+                const mustDisable = hasActive || !isCorrectCount;
+                
                 if (mustDisable) {
                     submitBtn.disabled = true;
                     submitBtn.classList.remove('btn-primary');
                     submitBtn.classList.add('btn-secondary');
+                    
+                    if (!hasActive && !isCorrectCount) {
+                        submitBtn.innerText = `Pilih ${targetCount - selectedKamarIds.length} Kamar Lagi`;
+                    } else if (hasActive) {
+                        submitBtn.innerText = `Ada Booking Aktif`;
+                    }
                 } else {
                     submitBtn.disabled = false;
                     submitBtn.classList.remove('btn-secondary');
                     submitBtn.classList.add('btn-primary');
+                    submitBtn.innerText = `Booking Sekarang`;
                 }
             }
         });
@@ -2181,32 +2208,6 @@
                 @endforeach
             };
 
-            // Safely pass facilities data
-            window.kamarFacilities = {
-                @foreach (($kosan?->kamars ?? []) as $room)
-                    @php
-                        $kamarId = $room && method_exists($room, '__get') ? ($room->kamar_id ?? null) : null;
-                        $fasilitas = $room && method_exists($room, '__get') ? ($room->fasilitas ?? []) : [];
-                    @endphp
-                    @if ($kamarId)
-                        "{{ $kamarId }}": [
-                            @foreach ($fasilitas as $fas)
-                                @php
-                                    $fasId = $fas && method_exists($fas, '__get') ? ($fas->fasilitas_id ?? 0) : 0;
-                                    $fasNama = $fas && method_exists($fas, '__get') ? ($fas->nama_fasilitas ?? '') : '';
-                                    $fasIcon = $fas && method_exists($fas, '__get') ? ($fas->icon_fasilitas ?? 'fas fa-check') : 'fas fa-check';
-                                @endphp
-                                {
-                                    "id": {{ $fasId }},
-                                    "nama": "{{ $fasNama }}",
-                                    "icon": "{{ $fasIcon }}"
-                                }{{ !$loop->last ? ',' : '' }}
-                            @endforeach
-                        ]{{ !$loop->last ? ',' : '' }}
-                    @endif
-                @endforeach
-            };
-
             function toggleCustom() {
                 if (durSel.value === 'bulanan') {
                     bulanDiv.style.display = 'block';
@@ -2220,20 +2221,88 @@
                 }
             }
 
+            function displayRoomFacilities(kamarId, nomorKamar) {
+                const facilitiesSection = document.getElementById('selectedRoomFacilities');
+                const roomNumberSpan = document.getElementById('selectedRoomNumber');
+                const facilitiesList = document.getElementById('facilitiesList');
+                const facilitiesCount = document.getElementById('facilitiesCount');
+
+                // Get facilities data
+                const facilities = window.kamarFacilities?.[kamarId] || [];
+
+                if (facilities.length > 0) {
+                    facilitiesSection.style.display = 'block';
+                    roomNumberSpan.textContent = nomorKamar;
+                    facilitiesCount.innerHTML =
+                        `<i class="fas fa-check-circle me-1"></i>${facilities.length} Fasilitas`;
+
+                    let facilitiesHTML = '';
+                    facilities.forEach((fas, index) => {
+                        const isImageIcon = fas.icon && (fas.icon.includes('/') || fas.icon.includes('.'));
+
+                        facilitiesHTML += `
+                            <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+                                <div class="facility-card">
+                                    <div class="facility-card-inner">
+                                        <div class="facility-icon-wrapper">
+                                            ${isImageIcon
+                                                ? `<img src="${fas.icon.startsWith('http') ? fas.icon : '/storage/' + fas.icon}" alt="${fas.nama}" class="facility-icon-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                       <div class="facility-icon-fallback" style="display:none;"><i class="fas fa-check-circle"></i></div>`
+                                                : `<i class="${fas.icon || 'fas fa-check-circle'} facility-icon-font"></i>`
+                                            }
+                                        </div>
+                                        <div class="facility-info">
+                                            <h6 class="facility-name">${fas.nama}</h6>
+                                            <div class="facility-badge">
+                                                <i class="fas fa-check me-1"></i>Tersedia
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    facilitiesList.innerHTML = facilitiesHTML;
+                } else {
+                    facilitiesSection.style.display = 'block';
+                    roomNumberSpan.textContent = nomorKamar;
+                    facilitiesCount.innerHTML = `<i class="fas fa-exclamation-circle me-1"></i>0 Fasilitas`;
+                    facilitiesList.innerHTML = `
+                        <div class="col-12">
+                            <div class="empty-facilities-message">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">Tidak ada fasilitas untuk kamar ini</h6>
+                                <p class="text-muted small mb-0">Silakan pilih kamar lain untuk melihat fasilitas yang tersedia.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            window.displayRoomFacilities = displayRoomFacilities;
+
             function recalc() {
-                let rooms = 1;
+                let roomsCount = 1;
                 if (jumlahKamarSel && jumlahKamarSel.value) {
-                    rooms = parseInt(jumlahKamarSel.value);
+                    roomsCount = parseInt(jumlahKamarSel.value);
                 }
 
-                const selectedId = (document.getElementById('inputKamarId')?.value || '').trim();
-                let effectiveMonthlyPricePerRoom = (selectedId && kamarPrices[selectedId]) ? kamarPrices[selectedId] :
-                    monthly;
+                const selectedIds = (document.getElementById('inputKamarId')?.value || '').split(',').filter(id => id);
+                
+                // HANYA hitung total harga dari kamar yang sudah benar-benar diklik
+                let totalBasePrice = 0;
+                if (selectedIds.length > 0) {
+                    selectedIds.forEach(id => {
+                        totalBasePrice += (kamarPrices[id] || monthly);
+                    });
+                } else {
+                    // Jika belum ada yang dipilih, tampilkan 0 atau harga default 1 kamar sebagai info awal
+                    totalBasePrice = 0; 
+                }
 
                 let durationType = durSel.value;
                 let durationValueInMonths = parseInt(durSel.selectedOptions[0].getAttribute('data-value'));
                 const selectedOption = durSel.selectedOptions[0];
-                const optionPrice = parseFloat(selectedOption.getAttribute('data-price') || '0');
                 let displayDurationText = durSel.selectedOptions[0].text.replace(' (custom)', '');
 
                 if (durationType === 'bulanan') {
@@ -2246,33 +2315,54 @@
                     displayDurationText = `${durationValueInMonths / 12} Tahun`;
                 }
 
-                let subtotal = 0;
-                if (durationType === 'bulanan' || durationType === 'tahunan') {
-                    subtotal = effectiveMonthlyPricePerRoom * durationValueInMonths * rooms;
-                } else {
-                    subtotal = (optionPrice > 0) ? optionPrice * rooms : effectiveMonthlyPricePerRoom *
-                        durationValueInMonths * rooms;
+                let finalTotal = 0;
+                // Jika totalBasePrice 0, maka finalTotal juga 0
+                if (totalBasePrice > 0) {
+                    if (durationType === 'bulanan' || durationType === 'tahunan') {
+                        finalTotal = totalBasePrice * durationValueInMonths;
+                    } else {
+                        const optionPrice = parseFloat(selectedOption.getAttribute('data-price') || '0');
+                        if (optionPrice > 0) {
+                            const factor = optionPrice / monthly;
+                            finalTotal = totalBasePrice * factor;
+                        } else {
+                            finalTotal = totalBasePrice * durationValueInMonths;
+                        }
+                    }
                 }
 
-                inputDurasi.value = durationType;
-                inputNilaiDurasi.value = (durationType === 'tahunan') ? (durationValueInMonths / 12) :
-                durationValueInMonths;
-                if (inputJumlahKamar) {
-                    inputJumlahKamar.value = rooms;
-                }
-                const startField = document.getElementById('bookingDate');
-                const startDate = (startField && startField.value) ? startField.value : '{{ date('Y-m-d') }}';
-                if (inputTanggalMulai) {
-                    inputTanggalMulai.value = startDate;
-                }
+                if (inputJumlahKamar) inputJumlahKamar.value = roomsCount;
+                if (inputDurasi) inputDurasi.value = durationType;
+                if (inputNilaiDurasi) inputNilaiDurasi.value = (durationType === 'tahunan') ? (durationValueInMonths / 12) : durationValueInMonths;
 
-                totalPrice.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(subtotal);
+                totalPrice.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(finalTotal);
+                
                 const perRoomPriceEl = document.getElementById('perRoomPrice');
                 if (perRoomPriceEl) {
-                    perRoomPriceEl.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(
-                    effectiveMonthlyPricePerRoom);
+                    if (selectedIds.length > 0) {
+                        // Ambil daftar harga dari kamar-kamar yang dipilih
+                        const prices = selectedIds.map(id => kamarPrices[id] || monthly);
+                        const minPrice = Math.min(...prices);
+                        const maxPrice = Math.max(...prices);
+
+                        if (minPrice === maxPrice) {
+                            // Jika semua harga sama
+                            perRoomPriceEl.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(minPrice);
+                        } else {
+                            // Jika ada perbedaan harga
+                            perRoomPriceEl.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(minPrice) + ' - Rp ' + new Intl.NumberFormat('id-ID').format(maxPrice);
+                        }
+                    } else {
+                        perRoomPriceEl.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(monthly);
+                    }
                 }
-                priceDetails.textContent = `Harga untuk ${rooms} Kamar selama ${displayDurationText}`;
+
+                // Update teks detail agar lebih informatif
+                if (selectedIds.length < roomsCount) {
+                    priceDetails.innerHTML = `<span class="text-danger fw-bold">Pilih ${roomsCount - selectedIds.length} kamar lagi</span>`;
+                } else {
+                    priceDetails.textContent = `Total untuk ${roomsCount} Kamar selama ${displayDurationText}`;
+                }
 
                 checkAvailability();
             }
@@ -2306,6 +2396,7 @@
             if (firstAvailableRoom) {
                 setTimeout(() => {
                     firstAvailableRoom.click();
+                    // Don't scroll on auto-select to avoid jumping on page load
                 }, 500);
             }
 
@@ -2354,30 +2445,50 @@
                 const statusBadge = document.querySelector('.availability-badge');
                 const btn = document.getElementById('bookingSubmitBtn');
                 const hasActive = {{ $hasActiveBooking ?? false ? 'true' : 'false' }};
-                const selectedId = (document.getElementById('inputKamarId')?.value || '').trim();
+                
+                const targetCount = parseInt(jumlahKamarSelect?.value) || 1;
+                const currentSelectedCount = selectedKamarIds.length;
+                const isCountCorrect = currentSelectedCount === targetCount;
 
-                if (availableCount >= requestedRooms) {
+                if (availableCount >= targetCount) {
                     if (statusBadge) {
                         statusBadge.classList.remove('unavailable');
                         statusBadge.classList.add('available');
                         statusBadge.innerHTML = `<i class="fas fa-check-circle me-2"></i>${availableCount} kamar tersedia`;
                     }
-                    if (btn && selectedId && !hasActive) {
-                        btn.disabled = false;
-                        btn.classList.remove('btn-secondary');
-                        btn.classList.add('btn-primary');
+                    
+                    if (hasActive) {
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.innerText = 'Ada Booking Aktif';
+                        }
+                    } else if (!isCountCorrect) {
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.classList.remove('btn-primary');
+                            btn.classList.add('btn-secondary');
+                            btn.innerText = `Pilih ${targetCount - currentSelectedCount} Kamar Lagi`;
+                        }
+                    } else {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.classList.remove('btn-secondary');
+                            btn.classList.add('btn-primary');
+                            btn.innerText = 'Booking Sekarang';
+                        }
                     }
                 } else {
                     if (statusBadge) {
                         statusBadge.classList.remove('available');
                         statusBadge.classList.add('unavailable');
                         statusBadge.innerHTML =
-                            `<i class="fas fa-times-circle me-2"></i>Tidak tersedia untuk ${requestedRooms} kamar`;
+                            `<i class="fas fa-times-circle me-2"></i>Kamar tidak mencukupi`;
                     }
                     if (btn) {
                         btn.disabled = true;
                         btn.classList.remove('btn-primary');
                         btn.classList.add('btn-secondary');
+                        btn.innerText = 'Kamar Tidak Mencukupi';
                     }
                 }
             }

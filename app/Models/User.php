@@ -8,6 +8,21 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @property int $user_id
+ * @property string $nama_lengkap
+ * @property string $username
+ * @property string $email
+ * @property string $password
+ * @property string|null $remember_token
+ * @property string|null $no_telepon
+ * @property string $role
+ * @property string|null $alamat
+ * @property string|null $foto_profil
+ * @property string $status_akun
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;

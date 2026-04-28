@@ -28,7 +28,7 @@
     <!-- Status Cards -->
     <div class="container-fluid mt-4">
         <div class="row">
-            <div class="col-6 col-sm-6 col-md-4 mb-3 mb-md-4">
+            <div class="col-6 col-lg-3 mb-3 mb-md-4">
                 <div class="status-card">
                     <div class="row g-0 align-items-center">
                         <div class="col-4 col-sm-3 text-center">
@@ -45,24 +45,24 @@
                     </div>
                 </div>
             </div>
-            <div class="col-6 col-sm-6 col-md-4 mb-3 mb-md-4">
+            <div class="col-6 col-lg-3 mb-3 mb-md-4">
                 <div class="status-card">
                     <div class="row g-0 align-items-center">
                         <div class="col-4 col-sm-3 text-center">
                             <div class="status-icon bg-gray-light">
-                                <i class="fas fa-heart" style="color: #4f6f52;""></i>
+                                <i class="fas fa-heart" style="color: #4f6f52;"></i>
                             </div>
                         </div>
                         <div class="col-8 col-sm-9">
                             <div class="card-body">
                                 <h5 class="card-title">Kosan Favorit</h5>
-                                <p class="card-text mb-0">{{ $wishlist_count ?? 0 }} Kosan</p>
+                                <p class="card-text mb-0"><span id="wishlist-count-display">{{ $wishlist_count ?? 0 }}</span> Kosan</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-sm-6 col-md-4 mb-3 mb-md-4">
+            <div class="col-6 col-lg-3 mb-3 mb-md-4">
                 <div class="status-card">
                     <div class="row g-0 align-items-center">
                         <div class="col-4 col-sm-3 text-center">
@@ -73,7 +73,24 @@
                         <div class="col-8 col-sm-9">
                             <div class="card-body">
                                 <h5 class="card-title">Pending</h5>
-                                <p class="card-text mb-0">{{ $pending_booking_count ?? 0 }} Pembayaran</p>
+                                <p class="card-text mb-0">{{ $pending_booking_count ?? 0 }} Bayar</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3 mb-3 mb-md-4">
+                <div class="status-card">
+                    <div class="row g-0 align-items-center">
+                        <div class="col-4 col-sm-3 text-center">
+                            <div class="status-icon bg-gray-light">
+                                <i class="fas fa-bell" style="color: #4f6f52;"></i>
+                            </div>
+                        </div>
+                        <div class="col-8 col-sm-9">
+                            <div class="card-body">
+                                <h5 class="card-title">Notifikasi</h5>
+                                <p class="card-text mb-0">{{ $notification_count ?? 0 }} Baru</p>
                             </div>
                         </div>
                     </div>
@@ -1157,19 +1174,27 @@
             document.querySelectorAll('.wishlist-btn').forEach(button => {
                 button.addEventListener('click', function(event) {
                     event.preventDefault();
-                    const kosanId = this.dataset.id;
-
-                    // Prevent non-logged-in users from favoriting
-                    if (!{!! Auth::check() ? 'true' : 'false' !!}) {
-                        window.location.href = '{{ route('login') }}';
-                        return;
-                    }
+                    event.stopPropagation(); // Mencegah card ter-klik jika ada link
                     
+                    const kosanId = this.dataset.id;
                     if (!kosanId || kosanId == 0) return;
 
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    // Logika jika belum login
+                    const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+                    if (!isLoggedIn) {
+                        this.classList.add('active'); // Merah sekilas
+                        setTimeout(() => {
+                            this.classList.remove('active'); // Kembali semula
+                            // Opsional: tampilkan info login jika diperlukan
+                        }, 800);
+                        return;
+                    }
 
-                    fetch(`/kosan/${kosanId}/toggle-favorite`, {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    // Perbaikan URL: Hapus 'toggle-' karena di rute aslinya hanya '/favorite'
+                    const url = `{{ url('users/kosan') }}/${kosanId}/favorite`;
+
+                    fetch(url, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': csrfToken,
@@ -1177,13 +1202,40 @@
                             'Content-Type': 'application/json',
                         },
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success) {
-                            this.classList.toggle('active', data.action === 'added');
+                            const isAdded = data.action === 'added';
+                            this.classList.toggle('active', isAdded);
+                            
+                            // Perubahan Ikon: fas (isi) untuk favorit, far (kosong) jika dihapus
+                            const icon = this.querySelector('i');
+                            if (icon) {
+                                if (isAdded) {
+                                    icon.classList.remove('far');
+                                    icon.classList.add('fas');
+                                } else {
+                                    icon.classList.remove('fas');
+                                    icon.classList.add('far');
+                                }
+                            }
+                            
+                            // Update angka di dashboard secara real-time
+                            const display = document.getElementById('wishlist-count-display');
+                            if (display) {
+                                let currentCount = parseInt(display.innerText) || 0;
+                                display.innerText = isAdded ? currentCount + 1 : Math.max(0, currentCount - 1);
+                            }
                         }
                     })
-                    .catch(error => console.error('Error:', error));
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // Revert UI jika gagal
+                        this.classList.toggle('active');
+                    });
                 });
             });
         });

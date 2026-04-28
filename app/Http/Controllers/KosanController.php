@@ -174,28 +174,30 @@ class KosanController extends Controller
             }
         }
 
-        $kamarId = request()->input('kamar_id');
+        $kamarIdRaw = request()->input('kamar_id');
         $selectedKamar = null;
-        if ($kamarId) {
-            $kamar = \App\Models\Kamar::find($kamarId);
-            if (!$kamar || $kamar->status_kamar !== 'tersedia') {
-                return redirect()->route('users.kosan.show', $id)
-                    ->with('error', 'Kamar yang dipilih tidak tersedia.');
+        $kamarIds = [];
+        $selectedKamarPrices = [];
+        
+        if ($kamarIdRaw) {
+            $kamarIds = explode(',', $kamarIdRaw);
+            $primaryKamarId = $kamarIds[0];
+            
+            // Ambil semua kamar yang dipilih untuk mendapatkan harganya
+            $rooms = \App\Models\Kamar::whereIn('kamar_id', $kamarIds)->get();
+            foreach ($rooms as $room) {
+                $selectedKamarPrices[$room->kamar_id] = (float) $room->harga_setelah_diskon;
             }
-            $hasRoomActive = BookingKosan::where('kamar_id', $kamarId)
-                ->where('status_booking', 'confirmed')
-                ->whereDate('tanggal_checkout', '>=', Carbon::now()->toDateString())
-                ->exists();
-            if ($hasRoomActive) {
-                return redirect()->route('users.kosan.show', $id)
-                    ->with('error', 'Kamar ini sedang ditempati. Silakan pilih kamar lain.');
+
+            $kamar = $rooms->where('kamar_id', $primaryKamarId)->first();
+            if ($kamar && $kamar->status_kamar === 'tersedia') {
+                $selectedKamar = $kamar;
             }
-            $selectedKamar = $kamar;
         }
 
         $durasi = request()->input('durasi', 'bulanan');
         $nilaiDurasi = (int) request()->input('nilai_durasi', 1);
-        $jumlahKamar = (int) request()->input('jumlah_kamar', 1);
+        $jumlahKamar = (int) request()->input('jumlah_kamar', count($kamarIds) ?: 1);
         $tanggalMulai = request()->input('tanggal_mulai', Carbon::now()->toDateString());
 
         $monthlyRoomPrice = (float) ($selectedKamar ? ($selectedKamar->harga_per_bulan ?? 0) : $kosan->getHargaBulananAttribute());
@@ -203,6 +205,8 @@ class KosanController extends Controller
         return view('users.kosan.booking', [
             'kosan' => $kosan,
             'selectedKamar' => $selectedKamar,
+            'kamarIds' => $kamarIds,
+            'selectedKamarPrices' => $selectedKamarPrices,
             'monthlyRoomPrice' => $monthlyRoomPrice,
             'durasi' => $durasi,
             'nilaiDurasi' => $nilaiDurasi,

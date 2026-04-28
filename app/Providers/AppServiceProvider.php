@@ -3,17 +3,19 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\Pembayaran;
 use App\Observers\PembayaranObserver;
 use App\Models\UlasanKosan;
 use App\Observers\UlasanKosanObserver;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Kosan;
+use App\Models\Kamar;
 use App\Models\Notifikasi;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Notifications\Messages\MailMessage;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,7 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind('path.public', function() {
+            return base_path('public');
+        });
     }
 
     /**
@@ -30,10 +34,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (app()->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // Polymorphic Morph Map
         \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
-            'kosan' => \App\Models\Kosan::class,
-            'kamar' => \App\Models\Kamar::class,
+            'kosan' => Kosan::class,
+            'kamar' => Kamar::class,
         ]);
 
         // Model Observers
@@ -65,6 +73,7 @@ class AppServiceProvider extends ServiceProvider
 
         // View Composer for Header
         View::composer('layouts.user.header', function ($view) {
+            /** @var \App\Models\User|null $user */
             $user = Auth::user();
             $wishlist = 0;
             $notifCount = 0;

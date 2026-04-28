@@ -683,7 +683,29 @@
                     durationText = `${weeks} Minggu`;
                 }
 
-                summaryRoomPrice.textContent = formatCurrency(monthlyPrice);
+                // DATA HARGA ASLI TIAP KAMAR
+                const selectedKamarPrices = @json($selectedKamarPrices ?? []);
+                let totalMonthlyAllRooms = 0;
+                let priceRangeText = "";
+                let pricesArr = [];
+
+                for (const id in selectedKamarPrices) {
+                    const p = parseFloat(selectedKamarPrices[id]);
+                    totalMonthlyAllRooms += p;
+                    pricesArr.push(p);
+                }
+                
+                // Fallback jika data kosong
+                if (totalMonthlyAllRooms === 0) totalMonthlyAllRooms = monthlyPrice * roomCount;
+
+                if (pricesArr.length > 1) {
+                    const minP = Math.min(...pricesArr);
+                    const maxP = Math.max(...pricesArr);
+                    priceRangeText = minP === maxP ? formatCurrency(minP) : formatCurrency(minP) + ' - ' + formatCurrency(maxP);
+                    summaryRoomPrice.textContent = priceRangeText;
+                } else {
+                    summaryRoomPrice.textContent = formatCurrency(monthlyPrice);
+                }
 
                 // Update duration display
                 summaryDuration.textContent = `${durationText} x ${roomCount} Kamar`;
@@ -692,17 +714,19 @@
                 let subtotal = 0;
                 if (durationSelect.value === 'harian') {
                     const days = hariCustomInput && hariCustomInput.value ? parseInt(hariCustomInput.value) : 1;
-                    subtotal = dailyPrice * days * roomCount;
+                    const dailyRatio = 1/30.0;
+                    subtotal = totalMonthlyAllRooms * dailyRatio * days;
                 } else if (durationSelect.value === 'mingguan') {
                     const weeks = mingguCustomInput && mingguCustomInput.value ? parseInt(mingguCustomInput.value) : 1;
-                    subtotal = weeklyPrice * weeks * roomCount;
-                } else if (durationSelect.value === 'bulanan') {
-                    subtotal = monthlyPrice * months * roomCount;
-                } else if (durationSelect.value === 'tahunan') {
-                    subtotal = monthlyPrice * months * roomCount;
+                    const weeklyRatio = 1/4.0;
+                    subtotal = totalMonthlyAllRooms * weeklyRatio * weeks;
+                } else if (durationSelect.value === 'bulanan' || durationSelect.value === 'tahunan') {
+                    // totalMonthlyAllRooms adalah total harga per bulan untuk SEMUA kamar
+                    subtotal = totalMonthlyAllRooms * months;
                 } else {
                     const packagePrice = parseFloat(selectedDuration.getAttribute('data-price') || '0');
-                    subtotal = (packagePrice > 0 ? packagePrice : monthlyPrice * months) * roomCount;
+                    const ratio = packagePrice / (monthlyPrice || 1);
+                    subtotal = totalMonthlyAllRooms * ratio;
                 }
                 console.log("Calculated subtotal:", subtotal);
 
