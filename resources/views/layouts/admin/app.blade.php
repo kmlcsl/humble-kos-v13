@@ -7,7 +7,17 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title') - HumbleKos Admin</title>
     <!-- Favicon -->
-    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('images/favicon-humblekos.png') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ asset('images/icon-aplikasi-humblekos.png') }}">
+    
+    <!-- Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="HumbleKos Admin">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="HumbleKos Admin">
+    <meta name="theme-color" content="#4f6f52">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,10 +29,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('css/admin-core.css') }}">
+    <script src="{{ asset('js/admin-core.js') }}" defer></script>
     @stack('styles')
 
     <style>
-        /* == COLLAPSED SIDEBAR STYLES (Desktop Only) == */
         @media (min-width: 992px) {
             /* 1. General Collapsed Behavior */
             .sidebar-collapsed .admin-sidebar {

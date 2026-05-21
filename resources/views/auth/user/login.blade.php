@@ -28,10 +28,31 @@
                     <p style="color: #666; margin: 0; font-size: 14px;">Masuk ke akun untuk akses fitur lengkap</p>
                 </div>
 
-                @if ($errors->has('login'))
+                @if ($errors->any())
+                    <div style="background: #fee2e2; border-left: 4px solid #ef4444; color: #991b1b; padding: 12px 14px; border-radius: 8px; margin-bottom: 18px; font-size: 13px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 4px; font-weight: 600;">
+                            <i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>
+                            <span>Login Gagal</span>
+                        </div>
+                        <ul style="margin: 0; padding-left: 22px; list-style-type: disc;">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                @if (session('success'))
+                    <div style="background: #f0fdf4; border-left: 4px solid #22c55e; color: #166534; padding: 10px 14px; border-radius: 8px; margin-bottom: 18px; display: flex; align-items: center; font-size: 13px;">
+                        <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                @endif
+
+                @if (session('error'))
                     <div style="background: #fee2e2; border-left: 4px solid #ef4444; color: #991b1b; padding: 10px 14px; border-radius: 8px; margin-bottom: 18px; display: flex; align-items: center; font-size: 13px;">
-                        <i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>
-                        <span>{{ $errors->first('login') }}</span>
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                        <span>{{ session('error') }}</span>
                     </div>
                 @endif
 

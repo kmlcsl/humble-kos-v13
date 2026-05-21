@@ -18,7 +18,7 @@ class PemilikPengaturanController extends Controller
      */
     public function profil()
     {
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         return view('pemilik.pengaturan.profil', [
             'user' => $user
@@ -30,7 +30,7 @@ class PemilikPengaturanController extends Controller
      */
     public function updateProfil(Request $request)
     {
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
@@ -50,7 +50,7 @@ class PemilikPengaturanController extends Controller
      */
     public function keamanan()
     {
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         return view('pemilik.pengaturan.keamanan', [
             'user' => $user
@@ -62,7 +62,7 @@ class PemilikPengaturanController extends Controller
      */
     public function updatePassword(Request $request)
     {
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         $validated = $request->validate([
             'password_lama' => 'required',
@@ -99,7 +99,7 @@ class PemilikPengaturanController extends Controller
             'foto_profil' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         try {
             // Delete old photo if it exists
@@ -126,7 +126,7 @@ class PemilikPengaturanController extends Controller
      */
     public function removeFotoProfil()
     {
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         if ($user->foto_profil && Storage::disk('public')->exists($user->foto_profil)) {
             Storage::disk('public')->delete($user->foto_profil);

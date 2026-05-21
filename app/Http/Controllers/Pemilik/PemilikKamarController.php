@@ -7,6 +7,7 @@ use App\Models\Kosan;
 use App\Models\Kamar;
 use App\Models\Fasilitas;
 use App\Models\FotoProperti;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,37 +17,37 @@ use Illuminate\Support\Str;
 class PemilikKamarController extends Controller
 {
     /**
-     * Display listing of all rooms from owner's boarding houses
+     * Menampilkan daftar semua kamar dari kos milik user ini
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $kosanIds = Kosan::where('owner_id', $user->user_id)->pluck('kosan_id');
+        $kosanIds = Kosan::query()->where('owner_id', $user->user_id)->pluck('kosan_id');
 
-        $query = Kamar::with('kosan')
+        $query = Kamar::query()->with('kosan')
             ->whereIn('kosan_id', $kosanIds);
 
-        if ($request->has('id_kosan') && $request->id_kosan != 'all') {
-            $query->where('kosan_id', $request->id_kosan);
+        if ($request->has('id_kosan') && $request->input('id_kosan') != 'all') {
+            $query->where('kosan_id', $request->input('id_kosan'));
         }
 
-        if ($request->has('status') && $request->status != 'all') {
-            $query->where('status_kamar', $request->status);
+        if ($request->has('status') && $request->input('status') != 'all') {
+            $query->where('status_kamar', $request->input('status'));
         }
 
-        if ($request->has('nomor_kamar') && $request->nomor_kamar != '') {
-            $query->where('nomor_kamar', 'LIKE', '%' . $request->nomor_kamar . '%');
+        if ($request->has('nomor_kamar') && $request->filled('nomor_kamar')) {
+            $query->where('nomor_kamar', 'LIKE', '%' . $request->input('nomor_kamar') . '%');
         }
 
-        $sortBy = $request->get('sort', 'created_at');
-        $sortDirection = $request->get('direction', 'desc');
+        $sortBy = $request->input('sort', 'created_at');
+        $sortDirection = $request->input('direction', 'desc');
 
         $kamars = $query->orderBy($sortBy, $sortDirection)->paginate(10);
 
-        $kosans = Kosan::where('owner_id', $user->user_id)->get();
+        $kosans = Kosan::query()->where('owner_id', $user->user_id)->get();
 
-        $allOwnerKamar = Kamar::whereIn('kosan_id', $kosanIds)->get();
+        $allOwnerKamar = Kamar::query()->whereIn('kosan_id', $kosanIds)->get();
         $totalKamar = $allOwnerKamar->count();
         $kamarTersedia = $allOwnerKamar->where('status_kamar', 'tersedia')->count();
         $kamarTerisi = $allOwnerKamar->where('status_kamar', 'terisi')->count();
@@ -67,17 +68,17 @@ class PemilikKamarController extends Controller
     }
 
     /**
-     * Display rooms by specific boarding house
+     * Menampilkan daftar kamar berdasarkan kos tertentu
      */
-    public function byKosan($kosanId)
+    public function byKosan(int $kosanId)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $kosans = Kosan::where('kosan_id', $kosanId)
+        $kosans = Kosan::query()->where('kosan_id', $kosanId)
             ->where('owner_id', $user->user_id)
             ->firstOrFail();
 
-        $kamarList = Kamar::where('kosan_id', $kosanId)
+        $kamarList = Kamar::query()->where('kosan_id', $kosanId)
             ->with('fasilitas')
             ->orderBy('nomor_kamar', 'asc')
             ->paginate(10);
@@ -89,18 +90,18 @@ class PemilikKamarController extends Controller
     }
 
     /**
-     * Show form to create new room
+     * Menampilkan form buat kamar baru
      */
     public function create(Request $request)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $kosans = Kosan::where('owner_id', $user->user_id)
+        $kosans = Kosan::query()->where('owner_id', $user->user_id)
             ->where('status_validasi', 'approved')
             ->get();
 
-        $fasilitas = Fasilitas::orderBy('nama_fasilitas')->get();
-        $selectedKosan = $request->get('kosan_id');
+        $fasilitas = Fasilitas::query()->orderBy('nama_fasilitas')->get();
+        $selectedKosan = $request->input('kosan_id');
 
         return view('pemilik.kamar.create', [
             'kosans'        => $kosans,
@@ -110,11 +111,11 @@ class PemilikKamarController extends Controller
     }
 
     /**
-     * Store new room
+     * Menyimpan kamar baru
      */
     public function store(Request $request)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
         $validated = $request->validate([
             'kosan_id' => 'required|exists:kosan,kosan_id',
@@ -148,7 +149,7 @@ class PemilikKamarController extends Controller
             'foto_kamar' => 'Foto Kamar',
         ]);
 
-        // Validasi foto tambahan secara terpisah
+        // Validasi foto tambahan
         if ($request->hasFile('foto_tambahan')) {
             $request->validate([
                 'foto_tambahan' => 'array|max:3',
@@ -167,11 +168,11 @@ class PemilikKamarController extends Controller
         DB::beginTransaction();
 
         try {
-            $kosan = Kosan::where('kosan_id', $validated['kosan_id'])
+            $kosan = Kosan::query()->where('kosan_id', $validated['kosan_id'])
                 ->where('owner_id', $user->user_id)
                 ->firstOrFail();
 
-            $exists = Kamar::where('kosan_id', $validated['kosan_id'])
+            $exists = Kamar::query()->where('kosan_id', $validated['kosan_id'])
                 ->where('nomor_kamar', $validated['nomor_kamar'])
                 ->exists();
 
@@ -184,13 +185,13 @@ class PemilikKamarController extends Controller
 
             if ($request->hasFile('foto_kamar')) {
                 $file = $request->file('foto_kamar');
-                $filename = time() . '_' . Str::slug($request->nomor_kamar) . '.' . $file->getClientOriginalExtension();
+                $filename = time() . '_' . Str::slug($request->input('nomor_kamar')) . '.' . $file->getClientOriginalExtension();
                 $validated['foto_kamar'] = $file->storeAs('kamar', $filename, 'public');
             }
 
-            $kamar = Kamar::create($validated);
+            $kamar = Kamar::query()->create($validated);
 
-            // Upload foto tambahan (2-4)
+            // Upload foto tambahan
             if ($request->hasFile('foto_tambahan')) {
                 $urutan = 2;
                 foreach ($request->file('foto_tambahan') as $foto) {
@@ -199,7 +200,7 @@ class PemilikKamarController extends Controller
                     $filename = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
                     $path = $foto->storeAs('kamar', $filename, 'public');
 
-                    FotoProperti::create([
+                    FotoProperti::query()->create([
                         'properti_type' => 'kamar',
                         'properti_id' => $kamar->kamar_id,
                         'path_foto' => $path,
@@ -213,7 +214,7 @@ class PemilikKamarController extends Controller
             }
 
             if ($request->has('fasilitas')) {
-                $kamar->fasilitas()->attach($request->fasilitas);
+                $kamar->fasilitas()->attach($request->input('fasilitas'));
             }
 
             DB::commit();
@@ -228,13 +229,13 @@ class PemilikKamarController extends Controller
     }
 
     /**
-     * Display single room details
+     * Menampilkan detail kamar
      */
-    public function show($id)
+    public function show(int $id)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $kamars = Kamar::with([
+        $kamars = Kamar::query()->with([
             'kosan',
             'fasilitas',
             'fotos',
@@ -255,32 +256,42 @@ class PemilikKamarController extends Controller
     }
 
     /**
-     * Show form to edit (GET) or update (PUT) room
+     * Menampilkan form edit kamar
      */
-    public function update(Request $request, $id)
+    public function edit(int $id)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        // Jika request GET, tampilkan form edit
+        $kamars = Kamar::query()->with(['kosan', 'fasilitas', 'fotos'])
+            ->whereHas('kosan', function ($query) use ($user) {
+                $query->where('owner_id', $user->user_id);
+            })
+            ->findOrFail($id);
+
+        $fasilitas = Fasilitas::query()->orderBy('nama_fasilitas')->get();
+        $kosans = Kosan::query()->where('owner_id', $user->user_id)->get();
+
+        return view('pemilik.kamar.update', [
+            'kamars'     => $kamars,
+            'fasilitas' => $fasilitas,
+            'kosans'    => $kosans,
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan data kamar
+     */
+    public function update(Request $request, int $id)
+    {
+        // Tampilkan form edit jika request GET
         if ($request->isMethod('get')) {
-            $kamars = Kamar::with(['kosan', 'fasilitas', 'fotos'])
-                ->whereHas('kosan', function ($query) use ($user) {
-                    $query->where('owner_id', $user->user_id);
-                })
-                ->findOrFail($id);
-
-            $fasilitas = Fasilitas::orderBy('nama_fasilitas')->get();
-            $kosans = Kosan::where('owner_id', $user->user_id)->get();
-
-            return view('pemilik.kamar.update', [
-                'kamars'     => $kamars,
-                'fasilitas' => $fasilitas,
-                'kosans'    => $kosans,
-            ]);
+            return $this->edit($id);
         }
 
-        // Jika request PUT, proses update
-        $kamar = Kamar::whereHas('kosan', function ($query) use ($user) {
+        $user = User::query()->findOrFail(Auth::id());
+
+        // Proses update jika request PUT
+        $kamar = Kamar::query()->whereHas('kosan', function ($query) use ($user) {
             $query->where('owner_id', $user->user_id);
         })->findOrFail($id);
 
@@ -338,7 +349,7 @@ class PemilikKamarController extends Controller
         DB::beginTransaction();
 
         try {
-            $exists = Kamar::where('kosan_id', $kamar->kosan_id)
+            $exists = Kamar::query()->where('kosan_id', $kamar->kosan_id)
                 ->where('nomor_kamar', $validated['nomor_kamar'])
                 ->where('kamar_id', '!=', $id)
                 ->exists();
@@ -350,11 +361,10 @@ class PemilikKamarController extends Controller
                 ]);
             }
 
-            // Hapus foto yang ditandai
+            // Hapus foto yang dipilih
             if ($request->filled('hapus_foto')) {
-                foreach ($request->hapus_foto as $fotoId) {
-                    $foto = FotoProperti::find($fotoId);
-                    // Relaxed the check here
+                foreach ($request->input('hapus_foto') as $fotoId) {
+                    $foto = FotoProperti::query()->find($fotoId);
                     if ($foto && $foto->properti_id == $id) {
                         if (Storage::disk('public')->exists($foto->path_foto)) {
                             Storage::disk('public')->delete($foto->path_foto);
@@ -364,30 +374,30 @@ class PemilikKamarController extends Controller
                 }
             }
 
-            // Update main photo
+            // Update foto utama
             if ($request->hasFile('foto_kamar')) {
                 if ($kamar->foto_kamar && Storage::disk('public')->exists($kamar->foto_kamar)) {
                     Storage::disk('public')->delete($kamar->foto_kamar);
                 }
                 $file = $request->file('foto_kamar');
-                $filename = time() . '_' . Str::slug($request->nomor_kamar) . '.' . $file->getClientOriginalExtension();
+                $filename = time() . '_' . Str::slug($request->input('nomor_kamar')) . '.' . $file->getClientOriginalExtension();
                 $kamar->foto_kamar = $file->storeAs('kamar', $filename, 'public');
             }
 
-            // Upload additional photos
+            // Upload foto tambahan
             if ($request->hasFile('foto_tambahan')) {
-                $existingCount = FotoProperti::where('properti_type', 'kamar')
+                $existingCount = FotoProperti::query()->where('properti_type', 'kamar')
                     ->where('properti_id', $id)
                     ->count();
                 $urutan = max(1, $existingCount + 1);
 
                 foreach ($request->file('foto_tambahan') as $foto) {
-                    if (FotoProperti::where('properti_type', 'kamar')->where('properti_id', $id)->count() >= 3) break;
+                    if (FotoProperti::query()->where('properti_type', 'kamar')->where('properti_id', $id)->count() >= 3) break;
 
                     $filename = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
                     $path = $foto->storeAs('kamar', $filename, 'public');
 
-                    FotoProperti::create([
+                    FotoProperti::query()->create([
                         'properti_type' => 'kamar',
                         'properti_id' => $kamar->kamar_id,
                         'path_foto' => $path,
@@ -409,7 +419,7 @@ class PemilikKamarController extends Controller
             $kamar->save();
 
             if ($request->has('fasilitas')) {
-                $kamar->fasilitas()->sync($request->fasilitas);
+                $kamar->fasilitas()->sync($request->input('fasilitas'));
             } else {
                 $kamar->fasilitas()->detach();
             }
@@ -426,16 +436,16 @@ class PemilikKamarController extends Controller
     }
 
     /**
-     * Delete room
+     * Menghapus kamar
      */
-    public function destroy($id)
+    public function destroy(int $id)
     {
         DB::beginTransaction();
 
         try {
-            $user = Auth::user();
+            $user = User::query()->findOrFail(Auth::id());
 
-            $kamar = Kamar::whereHas('kosan', function ($query) use ($user) {
+            $kamar = Kamar::query()->whereHas('kosan', function ($query) use ($user) {
                 $query->where('owner_id', $user->user_id);
             })->findOrFail($id);
 
@@ -445,19 +455,18 @@ class PemilikKamarController extends Controller
                 return back()->with('error', 'Tidak dapat menghapus kamar karena masih memiliki booking aktif.');
             }
 
-            // Delete all foto_properti
-            $fotos = FotoProperti::where('properti_type', 'kamar')
+            // Hapus semua foto properti
+            FotoProperti::query()->where('properti_type', 'kamar')
                 ->where('properti_id', $id)
-                ->get();
+                ->get()
+                ->each(function(FotoProperti $foto) {
+                    if (Storage::disk('public')->exists($foto->path_foto)) {
+                        Storage::disk('public')->delete($foto->path_foto);
+                    }
+                    $foto->delete();
+                });
 
-            foreach ($fotos as $foto) {
-                if (Storage::disk('public')->exists($foto->path_foto)) {
-                    Storage::disk('public')->delete($foto->path_foto);
-                }
-                $foto->delete();
-            }
-
-            // Delete kamar photo (backward compatibility)
+            // Hapus foto utama
             if ($kamar->foto_kamar && Storage::disk('public')->exists($kamar->foto_kamar)) {
                 Storage::disk('public')->delete($kamar->foto_kamar);
             }
@@ -477,13 +486,13 @@ class PemilikKamarController extends Controller
     }
 
     /**
-     * Change room status
+     * Mengubah status kamar
      */
-    public function changeStatus(Request $request, $id)
+    public function changeStatus(Request $request, int $id)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $kamar = Kamar::whereHas('kosan', function ($query) use ($user) {
+        $kamar = Kamar::query()->whereHas('kosan', function ($query) use ($user) {
             $query->where('owner_id', $user->user_id);
         })->findOrFail($id);
 
@@ -497,13 +506,13 @@ class PemilikKamarController extends Controller
     }
 
     /**
-     * Update room facilities
+     * Update fasilitas kamar
      */
-    public function updateFasilitas(Request $request, $id)
+    public function updateFasilitas(Request $request, int $id)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $kamar = Kamar::whereHas('kosan', function ($query) use ($user) {
+        $kamar = Kamar::query()->whereHas('kosan', function ($query) use ($user) {
             $query->where('owner_id', $user->user_id);
         })->findOrFail($id);
 
@@ -513,7 +522,7 @@ class PemilikKamarController extends Controller
         ]);
 
         if ($request->has('fasilitas')) {
-            $kamar->fasilitas()->sync($request->fasilitas);
+            $kamar->fasilitas()->sync($request->input('fasilitas'));
         } else {
             $kamar->fasilitas()->detach();
         }

@@ -9,7 +9,7 @@ $dataRoutes = $routes->getDataAuth();
 
 foreach ($dataRoutes as $routeGroup) {
     foreach ($routeGroup['item'] as $route) {
-        $middleware = !empty($route['middleware']) ? explode(',', $route['middleware']) : [];
+        $middleware = !empty($route['middleware']) ? explode('|', str_replace(',', '|', $route['middleware'])) : [];
 
         if (is_string($route['controller']) && !str_contains($route['controller'], 'App\\Http\\Controllers')) { 
             $route['controller'] = 'App\\Http\\Controllers\\' . $route['controller'];
@@ -29,7 +29,11 @@ foreach ($dataRoutes as $routeGroup) {
             $laravelRoute->whereNumber('booking');
         }
 
-        $laravelRoute->name($route['name'])->middleware($middleware);
+        if (!empty($route['name'])) {
+            $laravelRoute->name($route['name']);
+        }
+        
+        $laravelRoute->middleware($middleware);
     }
 }
 

@@ -30,7 +30,7 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Store a newly created user in storage.
+     * Menyimpan user baru
      */
     public function store(Request $request)
     {
@@ -45,24 +45,24 @@ class AdminUserController extends Controller
         ]);
 
         $user = new User();
-        $user->nama_lengkap = $request->nama_lengkap;
-        $user->username = $request->username;
-        $user->email = $request->email;
-        $user->password = Hash::make($request->password);
-        $user->role = $request->role;
-        $user->no_telepon = $request->no_telepon;
-        $user->alamat = $request->alamat;
+        $user->nama_lengkap = $request->input('nama_lengkap');
+        $user->username = $request->input('username');
+        $user->email = $request->input('email');
+        $user->password = Hash::make($request->input('password'));
+        $user->role = $request->input('role');
+        $user->no_telepon = $request->input('no_telepon');
+        $user->alamat = $request->input('alamat');
         $user->save();
 
         return redirect()->route('admin.users.index')->with('success', 'User berhasil dibuat');
     }
 
     /**
-     * Display the specified user.
+     * Menampilkan detail user
      */
-    public function show($id)
+    public function show(int $id)
     {
-        $users = User::where('user_id', $id)->firstOrFail();
+        $users = User::query()->where('user_id', $id)->firstOrFail();
 
         return view('admin.users.show', [
             'users' => $users,
@@ -70,21 +70,29 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Show the form for editing (GET) or update (PUT) the specified user.
+     * Menampilkan form edit user
      */
-    public function update(Request $request, $id)
+    public function edit(int $id)
     {
-        // Jika request GET, tampilkan form edit
-        if ($request->isMethod('get')) {
-            $users = User::where('user_id', $id)->firstOrFail();
+        $users = User::query()->where('user_id', $id)->firstOrFail();
 
-            return view('admin.users.update', [
-                'users' => $users,
-            ]);
+        return view('admin.users.update', [
+            'users' => $users,
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan data user
+     */
+    public function update(Request $request, int $id)
+    {
+        // Tampilkan form edit jika request GET
+        if ($request->isMethod('get')) {
+            return $this->edit($id);
         }
 
-        // Jika request PUT, proses update
-        $user = User::where('user_id', $id)->firstOrFail();
+        // Proses update jika request PUT
+        $user = User::query()->where('user_id', $id)->firstOrFail();
 
         $request->validate([
             'nama_lengkap' => 'required|string|max:100',
@@ -100,22 +108,22 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Remove the specified user from storage.
+     * Menghapus user
      */
-    public function destroy($id)
+    public function destroy(int $id)
     {
-        $user = User::where('user_id', $id)->firstOrFail();
+        $user = User::query()->where('user_id', $id)->firstOrFail();
         $user->delete();
 
         return redirect()->route('admin.users.index')->with('success', 'User berhasil dihapus');
     }
 
     /**
-     * Update user password
+     * Update password user
      */
-    public function updatePassword(Request $request, $id)
+    public function updatePassword(Request $request, int $id)
     {
-        $user = User::where('user_id', $id)->firstOrFail();
+        $user = User::query()->where('user_id', $id)->firstOrFail();
 
         $validated = $request->validate([
             'new_password' => 'required|string|min:8|confirmed',

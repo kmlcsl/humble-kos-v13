@@ -51,7 +51,11 @@
                                     class="badge {{ $kosan->jenis_kos == 'putra' ? 'bg-primary' : ($kosan->jenis_kos == 'putri' ? 'bg-danger' : 'bg-success') }}">
                                     Kos {{ ucfirst($kosan->jenis_kos) }}
                                 </span>
-                                <span class="badge bg-info">{{ $kosan->kamar_tersedia }} kamar tersedia</span>
+                                @if ($kosan->kamar_tersedia > 0)
+                                    <span class="badge bg-info">{{ $kosan->kamar_tersedia }} kamar tersedia</span>
+                                @else
+                                    <span class="badge bg-danger">Kamar penuh</span>
+                                @endif
                             </div>
                             <div class="kosan-facilities mt-2">
                                 @if ($kosan->fasilitas_wifi)

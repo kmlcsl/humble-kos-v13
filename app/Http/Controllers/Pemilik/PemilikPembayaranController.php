@@ -162,7 +162,7 @@ class PemilikPembayaranController extends Controller
     /**
      * Display single payment details
      */
-    public function show($id)
+    public function show(int $id)
     {
         $bookingIds = $this->getOwnedBookingIds();
         $pembayaran = Pembayaran::with(['booking.kamar.kosan', 'booking.user'])
@@ -270,7 +270,7 @@ class PemilikPembayaranController extends Controller
     /**
      * Approve a manual payment
      */
-    public function approve($id)
+    public function approve(int$id)
     {
         $bookingIds = $this->getOwnedBookingIds();
         $pembayaran = Pembayaran::with('booking.kamar')
@@ -300,7 +300,7 @@ class PemilikPembayaranController extends Controller
     /**
      * Reject a manual payment
      */
-    public function reject($id)
+    public function reject(int $id)
     {
         $bookingIds = $this->getOwnedBookingIds();
         $pembayaran = Pembayaran::whereIn('booking_id', $bookingIds)

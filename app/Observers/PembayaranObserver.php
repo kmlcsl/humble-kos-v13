@@ -10,7 +10,7 @@ class PembayaranObserver
     public function updated(Pembayaran $pembayaran): void
     {
         $status = $pembayaran->status_pembayaran ?? null;
-        if ($pembayaran->wasChanged('status_pembayaran') && $status === Pembayaran::STATUS_SUCCESSFUL) {
+        if ($pembayaran->wasChanged('status_pembayaran') && $status === Pembayaran::STATUS_PAID) {
             $booking = $pembayaran->booking;
             if ($booking && ($booking->status_booking ?? null) === 'pending') {
                 $booking->status_booking = 'confirmed';

@@ -52,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
             UlasanKosan::observe(UlasanKosanObserver::class);
         }
 
-        Carbon::setLocale(config('app.locale'));
+        Carbon::setLocale((string) config('app.locale', 'id'));
 
         // Custom Email Reset Password ke Bahasa Indonesia
         ResetPassword::toMailUsing(function ($notifiable, $token) {

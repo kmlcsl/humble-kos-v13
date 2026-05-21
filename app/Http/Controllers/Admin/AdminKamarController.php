@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 
 class AdminKamarController extends Controller
 {
-    protected $kamarService;
+    protected KamarAdminService $kamarService;
 
     public function __construct(KamarAdminService $kamarService)
     {
@@ -30,8 +30,8 @@ class AdminKamarController extends Controller
         $filters = $request->except('_token');
         $kamars = $this->kamarService->getAllKamar($filters);
 
-        // Get list of kosans for filter
-        $kosans = Kosan::orderBy('nama_kosan')->get();
+        // Ambil daftar kosan untuk filter
+        $kosans = Kosan::query()->orderBy('nama_kosan')->get();
 
         $stats = $this->kamarService->getKamarStatistics();
 
@@ -45,9 +45,9 @@ class AdminKamarController extends Controller
     /**
      * Menampilkan kamar berdasarkan ID kosan
      */
-    public function byKosan($id)
+    public function byKosan(int $id)
     {
-        $kosans = Kosan::findOrFail($id);
+        $kosans = Kosan::query()->findOrFail($id);
         $kamars = $this->kamarService->getAllKamar(['id_kosan' => $id]);
         $stats = $this->kamarService->getKamarStatistics($id);
 
@@ -63,13 +63,13 @@ class AdminKamarController extends Controller
      */
     public function create(Request $request)
     {
-        $kosans = Kosan::orderBy('nama_kosan')->get();
-        $fasilitas = Fasilitas::orderBy('nama_fasilitas')->get();
+        $kosans = Kosan::query()->orderBy('nama_kosan')->get();
+        $fasilitas = Fasilitas::query()->orderBy('nama_fasilitas')->get();
         $selectedKosan = null;
 
-        // If kosan_id is provided, preselect the kosan
+        // Jika kosan_id diberikan, pilih kosan tersebut
         if ($request->has('kosan_id')) {
-            $selectedKosan = Kosan::find($request->kosan_id);
+            $selectedKosan = Kosan::query()->find($request->input('kosan_id'));
         }
 
         return view('admin.manajemen-kamar.create', [
@@ -84,7 +84,7 @@ class AdminKamarController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi berdasarkan struktur database yang valid
+        // Validasi data kamar
         $request->validate([
             'kosan_id' => 'required|exists:kosan,kosan_id',
             'nomor_kamar' => 'required|string|max:50',
@@ -116,7 +116,7 @@ class AdminKamarController extends Controller
             'foto_kamar' => 'Foto Kamar',
         ]);
 
-        // Validasi foto tambahan secara terpisah
+        // Validasi foto tambahan
         if ($request->hasFile('foto_tambahan')) {
             $request->validate([
                 'foto_tambahan' => 'array|max:3',
@@ -135,9 +135,9 @@ class AdminKamarController extends Controller
         DB::beginTransaction();
 
         try {
-            // Check for duplicate room number in the same kosan
-            $exists = Kamar::where('kosan_id', $request->kosan_id)
-                ->where('nomor_kamar', $request->nomor_kamar)
+            // Cek duplikasi nomor kamar di kosan yang sama
+            $exists = Kamar::query()->where('kosan_id', $request->input('kosan_id'))
+                ->where('nomor_kamar', $request->input('nomor_kamar'))
                 ->exists();
 
             if ($exists) {
@@ -147,16 +147,16 @@ class AdminKamarController extends Controller
                 ]);
             }
 
-            // Create kamar
+            // Simpan data kamar
             $kamar = new Kamar();
-            $kamar->kosan_id = $request->kosan_id;
-            $kamar->nomor_kamar = $request->nomor_kamar;
-            $kamar->tipe_kamar = $request->tipe_kamar;
-            $kamar->harga_per_bulan = $request->harga_per_bulan;
-            $kamar->ukuran_kamar = $request->ukuran_kamar;
-            $kamar->kapasitas = $request->kapasitas;
-            $kamar->deskripsi = $request->deskripsi;
-            $kamar->status_kamar = $request->status_kamar;
+            $kamar->kosan_id = $request->input('kosan_id');
+            $kamar->nomor_kamar = $request->input('nomor_kamar');
+            $kamar->tipe_kamar = $request->input('tipe_kamar');
+            $kamar->harga_per_bulan = $request->input('harga_per_bulan');
+            $kamar->ukuran_kamar = $request->input('ukuran_kamar');
+            $kamar->kapasitas = $request->input('kapasitas');
+            $kamar->deskripsi = $request->input('deskripsi');
+            $kamar->status_kamar = $request->input('status_kamar');
 
             // Upload foto utama
             if ($request->hasFile('foto_kamar')) {
@@ -166,8 +166,6 @@ class AdminKamarController extends Controller
 
             $kamar->save();
 
-            // Main photo is handled above, not saved to foto_properti.
-
             // Upload foto tambahan (2-4)
             if ($request->hasFile('foto_tambahan')) {
                 $urutan = 2;
@@ -175,7 +173,7 @@ class AdminKamarController extends Controller
                     if ($urutan > 4) break;
 
                     $path = $foto->store('kamar', 'public');
-                    FotoProperti::create([
+                    FotoProperti::query()->create([
                         'properti_type' => 'kamar',
                         'properti_id' => $kamar->kamar_id,
                         'path_foto' => $path,
@@ -190,7 +188,7 @@ class AdminKamarController extends Controller
 
             // Sync fasilitas kamar
             if ($request->has('fasilitas')) {
-                $kamar->fasilitas()->sync($request->fasilitas);
+                $kamar->fasilitas()->sync($request->input('fasilitas'));
             }
 
             DB::commit();
@@ -208,9 +206,9 @@ class AdminKamarController extends Controller
     /**
      * Menampilkan detail kamar
      */
-    public function show($id)
+    public function show(int $id)
     {
-        $kamars = Kamar::with(['kosan', 'fasilitas', 'fotos', 'fotoTambahan'])->findOrFail($id);
+        $kamars = Kamar::query()->with(['kosan', 'fasilitas', 'fotos', 'fotoTambahan'])->findOrFail($id);
 
         return view('admin.manajemen-kamar.show', [
             'kamars' => $kamars,
@@ -218,25 +216,32 @@ class AdminKamarController extends Controller
     }
 
     /**
-     * Menampilkan form edit (GET) atau menyimpan perubahan (PUT)
+     * Menampilkan form edit kamar
      */
-    public function update(Request $request, $id)
+    public function edit(int $id)
     {
-        // Jika request GET, tampilkan form edit
-        if ($request->isMethod('get')) {
-            $kamars = Kamar::with(['fasilitas', 'fotos'])->findOrFail($id);
-            $kosans = Kosan::orderBy('nama_kosan')->get();
-            $fasilitas = Fasilitas::orderBy('nama_fasilitas')->get();
+        $kamars = Kamar::query()->with(['fasilitas', 'fotos'])->findOrFail($id);
+        $kosans = Kosan::query()->orderBy('nama_kosan')->get();
+        $fasilitas = Fasilitas::query()->orderBy('nama_fasilitas')->get();
 
-            return view('admin.manajemen-kamar.update', [
-                'kamars' => $kamars,
-                'kosans' => $kosans,
-                'fasilitas' => $fasilitas,
-            ]);
+        return view('admin.manajemen-kamar.update', [
+            'kamars' => $kamars,
+            'kosans' => $kosans,
+            'fasilitas' => $fasilitas,
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan data kamar
+     */
+    public function update(Request $request, int $id)
+    {
+        // Tampilkan form edit jika request GET
+        if ($request->isMethod('get')) {
+            return $this->edit($id);
         }
 
-        // Jika request PUT, proses update
-        // Validasi berdasarkan struktur database yang valid
+        // Validasi input data kamar
         $request->validate([
             'kosan_id' => 'required|exists:kosan,kosan_id',
             'nomor_kamar' => 'required|string|max:50',
@@ -268,7 +273,7 @@ class AdminKamarController extends Controller
             'foto_kamar' => 'Foto Kamar',
         ]);
 
-        // Validasi foto tambahan secara terpisah
+        // Validasi foto tambahan
         if ($request->hasFile('foto_tambahan')) {
             $request->validate([
                 'foto_tambahan' => 'array|max:3',
@@ -284,7 +289,7 @@ class AdminKamarController extends Controller
             ]);
         }
 
-        // Validasi hapus foto secara terpisah
+        // Validasi hapus foto
         if ($request->has('hapus_foto')) {
             $request->validate([
                 'hapus_foto' => 'array',
@@ -295,11 +300,11 @@ class AdminKamarController extends Controller
         DB::beginTransaction();
 
         try {
-            $kamar = Kamar::findOrFail($id);
+            $kamar = Kamar::query()->findOrFail($id);
 
-            // Check for duplicate room number in the same kosan (excluding current room)
-            $exists = Kamar::where('kosan_id', $request->kosan_id)
-                ->where('nomor_kamar', $request->nomor_kamar)
+            // Cek duplikasi nomor kamar (kecuali kamar saat ini)
+            $exists = Kamar::query()->where('kosan_id', $request->input('kosan_id'))
+                ->where('nomor_kamar', $request->input('nomor_kamar'))
                 ->where('kamar_id', '!=', $id)
                 ->exists();
 
@@ -310,57 +315,55 @@ class AdminKamarController extends Controller
                 ]);
             }
 
-            $kamar->kosan_id = $request->kosan_id;
-            $kamar->nomor_kamar = $request->nomor_kamar;
-            $kamar->tipe_kamar = $request->tipe_kamar;
-            $kamar->harga_per_bulan = $request->harga_per_bulan;
-            $kamar->ukuran_kamar = $request->ukuran_kamar;
-            $kamar->kapasitas = $request->kapasitas;
-            $kamar->deskripsi = $request->deskripsi;
-            $kamar->status_kamar = $request->status_kamar;
+            $kamar->kosan_id = $request->input('kosan_id');
+            $kamar->nomor_kamar = $request->input('nomor_kamar');
+            $kamar->tipe_kamar = $request->input('tipe_kamar');
+            $kamar->harga_per_bulan = $request->input('harga_per_bulan');
+            $kamar->ukuran_kamar = $request->input('ukuran_kamar');
+            $kamar->kapasitas = $request->input('kapasitas');
+            $kamar->deskripsi = $request->input('deskripsi');
+            $kamar->status_kamar = $request->input('status_kamar');
 
-            // Hapus foto yang ditandai
+            // Hapus foto yang dipilih
             if ($request->filled('hapus_foto')) {
-                foreach ($request->hapus_foto as $fotoId) {
-                    $foto = FotoProperti::find($fotoId);
-                    if ($foto && $foto->properti_id == $id) {
+                FotoProperti::query()->whereIn('foto_id', $request->input('hapus_foto'))
+                    ->where('properti_id', $id)
+                    ->get()
+                    ->each(function(FotoProperti $foto) {
                         if (Storage::disk('public')->exists($foto->path_foto)) {
                             Storage::disk('public')->delete($foto->path_foto);
                         }
                         $foto->delete();
-                    }
-                }
+                    });
             }
 
             // Upload foto utama baru
             if ($request->hasFile('foto_kamar')) {
-                // Hapus file foto lama jika ada
                 if ($kamar->foto_kamar && Storage::disk('public')->exists($kamar->foto_kamar)) {
                     Storage::disk('public')->delete($kamar->foto_kamar);
                 }
                 
-                // Simpan path baru ke kolom foto_kamar
                 $path = $request->file('foto_kamar')->store('kamar', 'public');
                 $kamar->foto_kamar = $path;
             }
 
             // Upload foto tambahan baru
             if ($request->hasFile('foto_tambahan')) {
-                $existingCount = FotoProperti::where('properti_type', 'kamar')
+                $existingCount = FotoProperti::query()->where('properti_type', 'kamar')
                     ->where('properti_id', $id)
                     ->count();
 
                 $urutan = max(1, $existingCount + 1);
 
                 foreach ($request->file('foto_tambahan') as $foto) {
-                    $totalFoto = FotoProperti::where('properti_type', 'kamar')
+                    $totalFoto = FotoProperti::query()->where('properti_type', 'kamar')
                         ->where('properti_id', $id)
                         ->count();
 
-                    if ($totalFoto >= 3) break; // Max 3 "other" photos
+                    if ($totalFoto >= 3) break;
 
                     $path = $foto->store('kamar', 'public');
-                    FotoProperti::create([
+                    FotoProperti::query()->create([
                         'properti_type' => 'kamar',
                         'properti_id' => $kamar->kamar_id,
                         'path_foto' => $path,
@@ -375,9 +378,9 @@ class AdminKamarController extends Controller
 
             $kamar->save();
 
-            // Sync fasilitas kamar
+            // Sinkronisasi fasilitas
             if ($request->has('fasilitas')) {
-                $kamar->fasilitas()->sync($request->fasilitas);
+                $kamar->fasilitas()->sync($request->input('fasilitas'));
             } else {
                 $kamar->fasilitas()->sync([]);
             }
@@ -397,27 +400,26 @@ class AdminKamarController extends Controller
     /**
      * Menghapus kamar dari database
      */
-    public function destroy($id)
+    public function destroy(Request $request, int $id)
     {
         DB::beginTransaction();
 
         try {
-            $kamar = Kamar::findOrFail($id);
+            $kamar = Kamar::query()->findOrFail($id);
             $idKosan = $kamar->kosan_id;
 
-            // Delete all foto_properti
-            $fotos = FotoProperti::where('properti_type', 'kamar')
+            // Hapus semua foto properti terkait
+            FotoProperti::query()->where('properti_type', 'kamar')
                 ->where('properti_id', $id)
-                ->get();
+                ->get()
+                ->each(function(FotoProperti $foto) {
+                    if (Storage::disk('public')->exists($foto->path_foto)) {
+                        Storage::disk('public')->delete($foto->path_foto);
+                    }
+                    $foto->delete();
+                });
 
-            foreach ($fotos as $foto) {
-                if (Storage::disk('public')->exists($foto->path_foto)) {
-                    Storage::disk('public')->delete($foto->path_foto);
-                }
-                $foto->delete();
-            }
-
-            // Delete kamar photo (backward compatibility)
+            // Hapus foto utama
             if ($kamar->foto_kamar && Storage::disk('public')->exists($kamar->foto_kamar)) {
                 Storage::disk('public')->delete($kamar->foto_kamar);
             }
@@ -426,8 +428,8 @@ class AdminKamarController extends Controller
 
             DB::commit();
 
-            // If accessed from kosan page, redirect back to that page
-            if (request()->has('from_kosan') && request()->from_kosan) {
+            // Redirect sesuai asal halaman
+            if ($request->has('from_kosan') && $request->from_kosan) {
                 return redirect()->route('admin.manajemen-kamar.by-kosan', $idKosan)
                     ->with('success', 'Kamar berhasil dihapus!');
             }
@@ -443,15 +445,15 @@ class AdminKamarController extends Controller
     /**
      * Mengubah status kamar
      */
-    public function changeStatus(Request $request, $id)
+    public function changeStatus(Request $request, int $id)
     {
         $request->validate([
             'status_kamar' => 'required|in:tersedia,terisi,maintenance',
         ]);
 
         try {
-            $kamar = $this->kamarService->changeKamarStatus($id, $request->status_kamar);
-            return redirect()->back()->with('success', "Status kamar berhasil diubah menjadi {$request->status_kamar}");
+            $kamar = $this->kamarService->changeKamarStatus($id, $request->input('status_kamar'));
+            return redirect()->back()->with('success', "Status kamar berhasil diubah menjadi {$request->input('status_kamar')}");
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan saat mengubah status kamar: ' . $e->getMessage());
         }

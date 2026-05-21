@@ -1,4 +1,3 @@
-{{-- Font loaded in app layout --}}
 <aside class="user-sidebar">
     <div class="sidebar-header">
         <a href="#" class="logo-container">
@@ -14,47 +13,49 @@
 
     @php
         $user = Auth::user();
-        $userName = $user?->name ?? 'Tamu';
+        $userName = $user?->nama_lengkap ?? $user?->name ?? 'Tamu';
+        
+        // Logika Inisial: Ambil huruf pertama dari maksimal 2 kata pertama
         $words = explode(' ', trim($userName));
         $initials = '';
+        $count = 0;
         foreach ($words as $word) {
-            if (!empty(trim($word))) {
+            if (!empty(trim($word)) && $count < 2) {
                 $initials .= strtoupper($word[0]);
+                $count++;
             }
         }
-        // Tidak ada batasan, ambil semua huruf awal
     @endphp
     <!-- User Profile Summary -->
     <div class="user-profile-summary"
-        style="display: flex !important; align-items: center !important; justify-content: center !important; padding: 15px 70px !important;"> 
-        <div class="user-avatar"
-            style="flex-shrink:0; width:50px; height:50px; display:flex; align-items:center; justify-content:center;">
+        style="display: flex !important; align-items: center !important; justify-content: flex-start !important; padding: 15px 15px 15px 60px !important;"> 
+        <div class="sidebar-user-avatar">
 
             @if (!empty($user?->foto_profil))
-                <img src="{{ asset('storage/' . $user->foto_profil) }}" alt="{{ $user->nama_lengkap ?? 'User' }}"
+                <img src="{{ asset('storage/' . $user->foto_profil) }}" alt="{{ $userName }}"
                     style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
             @else
                 <div
                     style="width:100%; height:100%; border-radius:50%;
                     display:flex; align-items:center; justify-content:center;
-                    font-weight:700; color:var(--primary-dark);">
-                    {{ collect(explode(' ', ($user->nama_lengkap ?? $user->name ?? 'Tamu')))->map(fn($n) => strtoupper($n[0]))->take(2)->implode('') }}
+                    font-weight:700; color:var(--primary-dark); font-size: 20px;">
+                    {{ $user ? $initials : 'T' }}
                 </div>
             @endif
         </div>
 
         <div class="user-info"
-            style="display: flex !important; flex-direction: column !important; justify-content: center !important; flex: 1 !important; min-width: 100px !important; overflow: visible !important; opacity: 1 !important; visibility: visible !important;">
+            style="display: flex !important; flex-direction: column !important; justify-content: center !important; flex: 1 !important; min-width: 0 !important; overflow: hidden !important; opacity: 1 !important; visibility: visible !important;">
             <h6 class="user-name"
-                style="margin: 0 !important; padding: 0 !important; color: #000000 !important; font-weight: 600 !important; font-size: {{ $user ? '18px' : '16px' }} !important; display: block !important; opacity: 1 !important; visibility: visible !important; line-height: 1.3;">
-                {{ $user ? ($user->nama_lengkap ?? $user->name) : 'Tamu' }}
+                style="margin: 0 !important; padding: 0 !important; color: #000000 !important; font-weight: 700 !important; font-size: 18px !important; display: block !important; opacity: 1 !important; visibility: visible !important; line-height: 1.3;">
+                {{ $user ? $initials : 'Tamu' }}
             </h6>
             <span class="user-status"
                 style="margin: 0 !important; padding: 0 !important; font-size: 13px !important; color: #333333 !important; display: block !important; opacity: 1 !important; visibility: visible !important; line-height: 1.3; margin-top: 2px;">
                 @if (($user?->role ?? null) === 'pemilik_kos')
                     Pemilik Kos
                 @else
-                    {{ $user?->user_id ?? null ? 'Mahasiswa' : 'Pengguna' }}
+                    Pengguna
                 @endif
             </span>
         </div>
@@ -262,9 +263,9 @@
         background-color: #e6e9ee;
     }
 
-    .user-avatar {
-        width: 50px;
-        height: 50px;
+    .sidebar-user-avatar {
+        width: 50px !important;
+        height: 50px !important;
         border-radius: 50%;
         background-color: var(--primary-light);
         overflow: hidden;
@@ -273,9 +274,30 @@
         justify-content: center;
         flex-shrink: 0;
         margin-right: 15px;
+        transition: all 0.3s ease;
     }
 
-    .user-avatar img {
+    @media (max-width: 576px) {
+        .sidebar-user-avatar {
+            width: 35px !important;
+            height: 35px !important;
+        }
+        .user-profile-summary {
+            padding-left: 35px !important;
+        }
+    }
+
+    @media (max-width: 400px) {
+        .sidebar-user-avatar {
+            width: 30px !important;
+            height: 30px !important;
+        }
+        .user-profile-summary {
+            padding-left: 30px !important;
+        }
+    }
+
+    .sidebar-user-avatar img {
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -356,7 +378,7 @@
         color: var(--primary);
     }
 
-    .nav-item.active .nav-link {
+    .nav-item.active > .nav-link {
         background-color: var(--primary-light);
         color: var(--primary-dark);
     }
@@ -366,6 +388,95 @@
         text-align: center;
         font-size: 18px;
         margin-right: 12px;
+    }
+
+    /* Submenu Styles */
+    .submenu {
+        list-style: none !important;
+        padding: 0 !important;
+        margin: 5px 0 10px 0 !important;
+        display: none;
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        border-left: 3px solid var(--primary-light) !important;
+        width: 100% !important;
+    }
+
+    .submenu.show {
+        display: block !important;
+        visibility: visible !important;
+        height: auto !important;
+        opacity: 1 !important;
+    }
+
+    .submenu li {
+        width: 100% !important;
+        display: block !important;
+    }
+
+    .submenu .nav-link {
+        padding: 10px 15px 10px 40px !important;
+        font-size: 13px !important;
+        color: #4b5563 !important;
+        display: flex !important;
+        align-items: center !important;
+        text-decoration: none !important;
+        width: 100% !important;
+        background-color: transparent !important;
+    }
+
+    .submenu .nav-link:hover {
+        background-color: rgba(79, 111, 82, 0.1) !important;
+        color: var(--primary-dark) !important;
+    }
+
+    .submenu .nav-link.active {
+        background-color: white !important;
+        color: var(--primary) !important;
+        font-weight: 600 !important;
+        border-radius: 0 8px 8px 0 !important;
+    }
+
+    .submenu .nav-link i {
+        font-size: 13px !important;
+        width: 18px !important;
+        margin-right: 10px !important;
+        color: inherit !important;
+    }
+
+    .dropdown-toggle {
+        position: relative;
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .dropdown-toggle::after {
+        content: '\f107';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        font-size: 12px;
+        transition: transform 0.3s;
+        margin-left: auto;
+    }
+
+    .dropdown-toggle[aria-expanded="true"]::after {
+        transform: rotate(180deg);
+    }
+
+    .nav-badge {
+        background-color: var(--danger) !important;
+        color: white !important;
+        font-size: 10px !important;
+        padding: 2px 7px !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        margin-left: 10px !important;
+    }
+
+    .nav-badge-sm {
+        padding: 1px 5px !important;
+        font-size: 9px !important;
     }
 
     /* Sidebar Footer */
@@ -473,53 +584,41 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize collapsed menus properly
-        const activeCollapses = document.querySelectorAll('.collapse.show');
-        activeCollapses.forEach(function(collapse) {
-            collapse.style.display = 'block';
+        // Initialize submenus state
+        const submenus = document.querySelectorAll('.submenu');
+        submenus.forEach(function(submenu) {
+            if (submenu.classList.contains('show')) {
+                submenu.style.setProperty('display', 'block', 'important');
+            } else {
+                submenu.style.setProperty('display', 'none', 'important');
+            }
         });
 
-        // Handle dropdown toggles - Fixed version
+        // Handle dropdown toggles
         const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
         dropdownToggles.forEach(function(toggle) {
             toggle.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const targetId = this.getAttribute('href');
-                const target = document.querySelector(targetId);
+                const targetId = this.getAttribute('href').replace('#', '');
+                const target = document.getElementById(targetId);
 
                 if (target) {
-                    const isShown = target.classList.contains('show');
+                    const isCurrentlyHidden = target.style.display === 'none' || !target.classList.contains('show');
 
-                    // Toggle current dropdown (bisa buka/tutup)
-                    if (isShown) {
-                        target.classList.remove('show');
-                        target.style.display = 'none';
-                        this.setAttribute('aria-expanded', 'false');
-                    } else {
+                    if (isCurrentlyHidden) {
+                        // Show it
+                        target.style.setProperty('display', 'block', 'important');
                         target.classList.add('show');
-                        target.style.display = 'block';
                         this.setAttribute('aria-expanded', 'true');
+                    } else {
+                        // Hide it
+                        target.style.setProperty('display', 'none', 'important');
+                        target.classList.remove('show');
+                        this.setAttribute('aria-expanded', 'false');
                     }
                 }
-            });
-        });
-
-        // Better touch handling
-        document.querySelectorAll('.nav-link').forEach(function(link) {
-            link.addEventListener('touchstart', function() {
-                this.style.backgroundColor = 'var(--gray-200)';
-            }, {
-                passive: true
-            });
-
-            link.addEventListener('touchend', function() {
-                setTimeout(() => {
-                    this.style.backgroundColor = '';
-                }, 100);
-            }, {
-                passive: true
             });
         });
     });

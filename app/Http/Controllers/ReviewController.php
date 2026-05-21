@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
-    protected $reviewService;
+    protected ReviewService $reviewService;
 
     public function __construct(ReviewService $reviewService)
     {
@@ -30,7 +30,7 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(int $id)
     {
         $user = Auth::user();
         $review = UlasanKosan::where('review_id', $id)
@@ -43,11 +43,10 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
         $user = Auth::user();
 
-        // Jika request GET, tampilkan form edit
         if ($request->isMethod('get')) {
             $review = UlasanKosan::where('review_id', $id)
                 ->where('user_id', $user->user_id)
@@ -78,7 +77,7 @@ class ReviewController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $user = Auth::user();
         $review = UlasanKosan::where('review_id', $id)

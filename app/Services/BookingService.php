@@ -87,6 +87,12 @@ class BookingService
         }
     }
 
+    /**
+     * @param int $bookingId
+     * @param int $userId
+     * @param string $durationType
+     * @param int|string $durationValue
+     */
     public function extendBooking($bookingId, $userId, $durationType, $durationValue)
     {
         DB::beginTransaction();
@@ -146,6 +152,10 @@ class BookingService
         }
     }
 
+    /**
+     * @param int $bookingId
+     * @param int $userId
+     */
     public function cancelBooking($bookingId, $userId)
     {
         DB::beginTransaction();
@@ -194,6 +204,12 @@ class BookingService
         }
     }
 
+    /**
+     * @param \App\Models\Kosan $kosan
+     * @param string $durationType
+     * @param int|string $roomCount
+     * @param int|string $durationValue
+     */
     protected function calculateTotalPrice(Kosan $kosan, $durationType, $roomCount, $durationValue = 1)
     {
         $monthly = (float) $kosan->getHargaSetelahDiskonAttribute();
@@ -231,6 +247,11 @@ class BookingService
         return (float) ($base * max(1, (int) $roomCount));
     }
 
+    /**
+     * @param \Carbon\Carbon $startDate
+     * @param string $durationType
+     * @param int|string $durationValue
+     */
     protected function calculateEndDate(Carbon $startDate, $durationType, $durationValue)
     {
         $endDate = clone $startDate;

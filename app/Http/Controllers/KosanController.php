@@ -12,7 +12,7 @@ use Carbon\Carbon;
 
 class KosanController extends Controller
 {
-    protected $kosanService;
+    protected KosanService $kosanService;
 
     public function __construct(KosanService $kosanService)
     {
@@ -28,11 +28,11 @@ class KosanController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(int $id)
     {
         $kosan = $this->kosanService->getKosanById($id);
 
-        // Eager load all necessary relationships for the detail view
+        // Load relasi untuk detail kosan
         $kosan->load([
             'fotos',
             'kamars.fotos',
@@ -79,7 +79,7 @@ class KosanController extends Controller
         ]);
     }
 
-    public function toggleFavorite($id)
+    public function toggleFavorite(int $id)
     {
         $kosan = Kosan::findOrFail($id);
         $userId = Auth::id();
@@ -110,7 +110,7 @@ class KosanController extends Controller
         ]);
     }
 
-    public function rateKosan(Request $request, $id)
+    public function rateKosan(Request $request, int $id)
     {
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
@@ -119,7 +119,7 @@ class KosanController extends Controller
         $user = Auth::user();
         $kosan = Kosan::where('status_validasi', 'approved')->findOrFail($id);
 
-        // Check if user has ever had a confirmed booking for this kosan
+        // Cek riwayat sewa untuk rating
         $isEligible = BookingKosan::where('user_id', $user->user_id)
             ->where('status_booking', 'confirmed')
             ->whereHas('kamar', function ($query) use ($kosan) {
@@ -159,7 +159,7 @@ class KosanController extends Controller
         ]);
     }
 
-    public function bookingForm($id)
+    public function bookingForm(Request $request, int $id)
     {
         $kosan = $this->kosanService->getKosanById($id);
 
@@ -174,7 +174,7 @@ class KosanController extends Controller
             }
         }
 
-        $kamarIdRaw = request()->input('kamar_id');
+        $kamarIdRaw = $request->input('kamar_id');
         $selectedKamar = null;
         $kamarIds = [];
         $selectedKamarPrices = [];
@@ -183,7 +183,7 @@ class KosanController extends Controller
             $kamarIds = explode(',', $kamarIdRaw);
             $primaryKamarId = $kamarIds[0];
             
-            // Ambil semua kamar yang dipilih untuk mendapatkan harganya
+            // Ambil semua kamar untuk cek harga
             $rooms = \App\Models\Kamar::whereIn('kamar_id', $kamarIds)->get();
             foreach ($rooms as $room) {
                 $selectedKamarPrices[$room->kamar_id] = (float) $room->harga_setelah_diskon;
@@ -195,10 +195,10 @@ class KosanController extends Controller
             }
         }
 
-        $durasi = request()->input('durasi', 'bulanan');
-        $nilaiDurasi = (int) request()->input('nilai_durasi', 1);
-        $jumlahKamar = (int) request()->input('jumlah_kamar', count($kamarIds) ?: 1);
-        $tanggalMulai = request()->input('tanggal_mulai', Carbon::now()->toDateString());
+        $durasi = $request->input('durasi', 'bulanan');
+        $nilaiDurasi = (int) $request->input('nilai_durasi', 1);
+        $jumlahKamar = (int) $request->input('jumlah_kamar', count($kamarIds) ?: 1);
+        $tanggalMulai = $request->input('tanggal_mulai', Carbon::now()->toDateString());
 
         $monthlyRoomPrice = (float) ($selectedKamar ? ($selectedKamar->harga_per_bulan ?? 0) : $kosan->getHargaBulananAttribute());
 
@@ -215,7 +215,7 @@ class KosanController extends Controller
         ]);
     }
 
-    public function processBooking(Request $request, $id)
+    public function processBooking(Request $request, int $id)
     {
         $request->validate([
             'tanggal_mulai' => 'required|date|after_or_equal:today',
@@ -245,7 +245,7 @@ class KosanController extends Controller
             'telepon.max' => 'Nomor telepon maksimal 20 karakter.',
         ]);
 
-        // Penyesuaian batas nilai durasi untuk mode bulanan
+        // Batasi durasi bulanan maksimal 11 bulan
         if ($request->jenis_durasi === 'bulanan' && (int) $request->nilai_durasi > 11) {
             return redirect()->back()
                 ->withInput()
@@ -310,7 +310,7 @@ class KosanController extends Controller
         }
     }
 
-    public function reviewForm($id)
+    public function reviewForm(int $id)
     {
         $kosan = Kosan::where('status_validasi', 'approved')->findOrFail($id);
         if (!Auth::check()) {
@@ -332,7 +332,7 @@ class KosanController extends Controller
         ]);
     }
 
-    public function storeReview(Request $request, $id)
+    public function storeReview(Request $request, int $id)
     {
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
@@ -451,7 +451,7 @@ class KosanController extends Controller
         }
     }
 
-    public function availability(Request $request, $id)
+    public function availability(Request $request, int $id)
     {
         try {
             $start = Carbon::parse($request->input('start', now()->toDateString()));
@@ -482,10 +482,10 @@ class KosanController extends Controller
         }
     }
 
-    private function formatDistance($distance)
+    private function formatDistance(float $distance)
     {
         if ($distance < 1) {
-            // Konversi ke meter
+            // Ubah ke meter
             $meters = round($distance * 1000);
             return "{$meters} meter";
         } else {

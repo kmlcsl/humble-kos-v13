@@ -11,7 +11,7 @@ use Carbon\Carbon;
 
 class BookingController extends Controller
 {
-    protected $bookingService;
+    protected BookingService $bookingService;
 
     public function __construct(BookingService $bookingService)
     {
@@ -20,7 +20,8 @@ class BookingController extends Controller
 
     public function index()
     {
-        $bookings = BookingKosan::where('user_id', Auth::id())
+        // Daftar booking user saat ini
+        $bookings = BookingKosan::query()->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -29,9 +30,10 @@ class BookingController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(int $id)
     {
-        $bookings = BookingKosan::where('booking_id', $id)
+        // Detail booking tertentu
+        $bookings = BookingKosan::query()->where('booking_id', $id)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -40,9 +42,12 @@ class BookingController extends Controller
         ]);
     }
 
-    public function cancel(Request $request, $id)
+    /**
+     * Membatalkan booking
+     */
+    public function cancel(Request $request, int $id)
     {
-        $booking = BookingKosan::where('booking_id', $id)
+        $booking = BookingKosan::query()->where('booking_id', $id)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -53,12 +58,9 @@ class BookingController extends Controller
         $booking->status_booking = 'cancelled';
         $booking->save();
 
-        // audit dihapus
-
-        // Increase available rooms in the kosan
+        // Tambah ketersediaan kamar di kosan
         $kosan = $booking->kamar ? $booking->kamar->kosan : null;
         if ($kosan) {
-            // Jika kolom kamar_tersedia ada di tabel kosan
             if (isset($kosan->kamar_tersedia)) {
                 $kosan->kamar_tersedia += 1;
                 $kosan->save();
@@ -69,12 +71,11 @@ class BookingController extends Controller
     }
 
     /**
-     * Fungsi ini mengarahkan pengguna ke halaman pembayaran untuk booking tertentu.
-     * Tidak lagi langsung mengkonfirmasi pembayaran.
+     * Arahkan ke halaman pembayaran
      */
-    public function processPayment(Request $request, $id)
+    public function processPayment(Request $request, int $id)
     {
-        $booking = BookingKosan::where('booking_id', $id)
+        $booking = BookingKosan::query()->where('booking_id', $id)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -82,13 +83,15 @@ class BookingController extends Controller
             return redirect()->back()->with('error', 'Booking tidak dapat diproses dengan status saat ini.');
         }
 
-        // Arahkan pengguna ke halaman pembayaran dengan booking ID
         return redirect()->route('users.pembayaran.index', $booking->booking_id);
     }
 
-    public function complete($id)
+    /**
+     * Menyelesaikan masa sewa
+     */
+    public function complete(int $id)
     {
-        $booking = BookingKosan::where('booking_id', $id)
+        $booking = BookingKosan::query()->where('booking_id', $id)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -104,14 +107,15 @@ class BookingController extends Controller
         $booking->status_booking = 'selesai';
         $booking->save();
 
-        // audit dihapus
-
         return redirect()->route('users.bookings.index')->with('success', 'Booking telah diselesaikan.');
     }
 
-    public function extendForm($id)
+    /**
+     * Form perpanjang sewa
+     */
+    public function extendForm(int $id)
     {
-        $booking = BookingKosan::where('booking_id', $id)
+        $booking = BookingKosan::query()->where('booking_id', $id)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -124,7 +128,10 @@ class BookingController extends Controller
         ]);
     }
 
-    public function extend(Request $request, $id)
+    /**
+     * Proses perpanjang sewa
+     */
+    public function extend(Request $request, int $id)
     {
         $request->validate([
             'jenis_durasi' => 'required|in:bulanan,tiga_bulan,semester,tahunan',
@@ -138,7 +145,7 @@ class BookingController extends Controller
         ]);
 
         try {
-            $result = $this->bookingService->extendBooking($id, Auth::id(), $request->jenis_durasi, $request->nilai_durasi);
+            $result = $this->bookingService->extendBooking($id, Auth::id(), $request->input('jenis_durasi'), $request->input('nilai_durasi'));
 
             if (!$result['success']) {
                 return redirect()->back()->with('error', $result['message']);

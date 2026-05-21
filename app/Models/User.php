@@ -22,6 +22,12 @@ use Illuminate\Support\Facades\Storage;
  * @property string $status_akun
  * @property \Carbon\Carbon|null $created_at
  * @property \Carbon\Carbon|null $updated_at
+ * 
+ * @method bool save(array $options = [])
+ * @method bool update(array $attributes = [], array $options = [])
+ * @method static \Illuminate\Database\Eloquent\Builder|User newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|User newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|User query()
  */
 class User extends Authenticatable
 {
@@ -50,6 +56,9 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    /**
+     * @param string|null $value
+     */
     public function setPasswordAttribute($value)
     {
         if (is_string($value) && !empty($value)) {
@@ -62,6 +71,9 @@ class User extends Authenticatable
         return $this->attributes['nama_lengkap'] ?? null;
     }
 
+    /**
+     * @param string|null $value
+     */
     public function setNameAttribute($value)
     {
         $this->attributes['nama_lengkap'] = $value;
@@ -72,6 +84,9 @@ class User extends Authenticatable
         return $this->attributes['no_telepon'] ?? null;
     }
 
+    /**
+     * @param string|null $value
+     */
     public function setNoHpAttribute($value)
     {
         $this->attributes['no_telepon'] = $value;

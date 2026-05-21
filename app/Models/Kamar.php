@@ -5,6 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $kamar_id
+ * @property int $kosan_id
+ * @property string $nomor_kamar
+ * @property string $tipe_kamar
+ * @property float $harga_per_bulan
+ * @property string $ukuran_kamar
+ * @property int $kapasitas
+ * @property string|null $deskripsi
+ * @property string|null $foto_kamar
+ * @property string $status_kamar
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Kamar extends Model
 {
     use HasFactory;

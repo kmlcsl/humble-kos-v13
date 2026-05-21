@@ -74,7 +74,7 @@ class PemilikUlasanController extends Controller
     /**
      * Display single review details
      */
-    public function show($id)
+    public function show(int $id)
     {
         $user = Auth::user();
 

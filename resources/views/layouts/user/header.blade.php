@@ -8,10 +8,10 @@
 
             <!-- Search Bar -->
             <div class="search-container grow mx-2 d-none d-md-flex">
-                <form action="#" method="GET">
+                <form action="{{ route('users.kosan.index') }}" method="GET">
                     <div class="search-input-wrapper">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" class="search-input" placeholder="Cari kos, area, kampus...">
+                        <input type="text" name="keyword" class="search-input" placeholder="Cari kos, area, kampus..." value="{{ request('keyword') }}">
                         <button type="button" class="search-filter-btn" data-bs-toggle="modal"
                             data-bs-target="#searchFilterModal">
                             <i class="fas fa-sliders-h"></i>
@@ -21,10 +21,10 @@
             </div>
 
             <div class="mobile-search-container grow mx-1 d-md-none">
-                <form action="#" method="GET">
+                <form action="{{ route('users.kosan.index') }}" method="GET">
                     <div class="mobile-search-wrapper">
                         <i class="fas fa-search mobile-search-icon"></i>
-                        <input type="text" class="mobile-search-input" placeholder="Cari...">
+                        <input type="text" name="keyword" class="mobile-search-input" placeholder="Cari..." value="{{ request('keyword') }}">
                         <button type="button" class="mobile-filter-btn" data-bs-toggle="modal"
                             data-bs-target="#searchFilterModal">
                             <i class="fas fa-sliders-h"></i>
@@ -171,52 +171,49 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form action="{{ route('users.kosan.index') }}" method="GET">
+                    <!-- Pertahankan keyword search jika ada -->
+                    @if(request()->has('keyword'))
+                        <input type="hidden" name="keyword" value="{{ request('keyword') }}">
+                    @endif
+
                     <div class="mb-3">
                         <label class="form-label">Lokasi</label>
-                        <select class="form-select">
-                            <option selected>Pilih Lokasi</option>
-                            <option>Jakarta</option>
-                            <option>Bandung</option>
-                            <option>Surabaya</option>
-                            <option>Yogyakarta</option>
-                            <option>Malang</option>
+                        <select name="kota" class="form-select">
+                            <option value="" {{ empty(request('kota')) ? 'selected' : '' }}>Pilih Lokasi</option>
+                            <option value="Aceh Barat" {{ request('kota') == 'Aceh Barat' ? 'selected' : '' }}>Aceh Barat</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Dekat Kampus</label>
-                        <select class="form-select">
-                            <option selected>Pilih Kampus</option>
-                            <option>Universitas Indonesia</option>
-                            <option>Institut Teknologi Bandung</option>
-                            <option>Universitas Gadjah Mada</option>
-                            <option>Universitas Brawijaya</option>
-                            <option>Institut Teknologi Sepuluh November</option>
+                        <select name="kampus" class="form-select">
+                            <option value="" {{ empty(request('kampus')) ? 'selected' : '' }}>Pilih Kampus</option>
+                            <option value="Universitas Teuku Umar" {{ request('kampus') == 'Universitas Teuku Umar' ? 'selected' : '' }}>Universitas Teuku Umar</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Rentang Harga</label>
                         <div class="row">
                             <div class="col">
-                                <input type="number" class="form-control" placeholder="Min" min="0">
+                                <input type="number" name="harga_min" class="form-control" placeholder="Min" min="0" value="{{ request('harga_min') }}">
                             </div>
                             <div class="col">
-                                <input type="number" class="form-control" placeholder="Max" min="0">
+                                <input type="number" name="harga_max" class="form-control" placeholder="Max" min="0" value="{{ request('harga_max') }}">
                             </div>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Jenis Kos</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="putraCheck">
+                            <input class="form-check-input" type="radio" name="tipe_kosan" value="putra" id="putraCheck" {{ request('tipe_kosan') == 'putra' ? 'checked' : '' }}>
                             <label class="form-check-label" for="putraCheck">Kos Putra</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="putriCheck">
+                            <input class="form-check-input" type="radio" name="tipe_kosan" value="putri" id="putriCheck" {{ request('tipe_kosan') == 'putri' ? 'checked' : '' }}>
                             <label class="form-check-label" for="putriCheck">Kos Putri</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="campurCheck">
+                            <input class="form-check-input" type="radio" name="tipe_kosan" value="campur" id="campurCheck" {{ request('tipe_kosan') == 'campur' ? 'checked' : '' }}>
                             <label class="form-check-label" for="campurCheck">Kos Campur</label>
                         </div>
                     </div>
@@ -225,41 +222,40 @@
                         <div class="row">
                             <div class="col-6">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="" id="acCheck">
+                                    <input class="form-check-input" type="checkbox" name="fasilitas[]" value="AC" id="acCheck" {{ in_array('AC', request('fasilitas', [])) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="acCheck">AC</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="" id="wifiCheck">
+                                    <input class="form-check-input" type="checkbox" name="fasilitas[]" value="Wifi" id="wifiCheck" {{ in_array('Wifi', request('fasilitas', [])) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="wifiCheck">Wifi</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="" id="kasurCheck">
+                                    <input class="form-check-input" type="checkbox" name="fasilitas[]" value="Kasur" id="kasurCheck" {{ in_array('Kasur', request('fasilitas', [])) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="kasurCheck">Kasur</label>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="" id="lemariCheck">
+                                    <input class="form-check-input" type="checkbox" name="fasilitas[]" value="Lemari" id="lemariCheck" {{ in_array('Lemari', request('fasilitas', [])) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="lemariCheck">Lemari</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value=""
-                                        id="kamarmandidCheck">
+                                    <input class="form-check-input" type="checkbox" name="fasilitas[]" value="Kamar Mandi Dalam" id="kamarmandidCheck" {{ in_array('Kamar Mandi Dalam', request('fasilitas', [])) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="kamarmandidCheck">Kamar Mandi Dalam</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="" id="parkirCheck">
+                                    <input class="form-check-input" type="checkbox" name="fasilitas[]" value="Tempat Parkir" id="parkirCheck" {{ in_array('Tempat Parkir', request('fasilitas', [])) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="parkirCheck">Tempat Parkir</label>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary">Terapkan Filter</button>
+                <button type="submit" class="btn btn-primary">Terapkan Filter</button>
             </div>
+                </form>
         </div>
     </div>
 </div>

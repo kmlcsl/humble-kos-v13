@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 
 class PemilikLaporanController extends Controller
 {
@@ -95,8 +96,8 @@ class PemilikLaporanController extends Controller
         $kosanIds = $this->getOwnedKosanIds();
 
         // Date range filter
-        $bulan = $request->get('bulan', Carbon::now()->month);
-        $tahun = $request->get('tahun', Carbon::now()->year);
+        $bulan = $request->input('bulan', Carbon::now()->month);
+        $tahun = $request->input('tahun', Carbon::now()->year);
 
         // Get occupancy data per kosan
         $okupansiData = Kosan::whereIn('kosan_id', $kosanIds)
@@ -142,11 +143,11 @@ class PemilikLaporanController extends Controller
         $bookingIds = $this->getOwnedBookingIds();
 
         // Date range filter
-        $periode = $request->get('periode', 'bulan'); // bulan, tahun, custom
-        $bulan = $request->get('bulan', Carbon::now()->month);
-        $tahun = $request->get('tahun', Carbon::now()->year);
-        $tanggalDari = $request->get('tanggal_dari');
-        $tanggalSampai = $request->get('tanggal_sampai');
+        $periode = $request->input('periode', 'bulan'); // bulan, tahun, custom
+        $bulan = $request->input('bulan', Carbon::now()->month);
+        $tahun = $request->input('tahun', Carbon::now()->year);
+        $tanggalDari = $request->input('tanggal_dari');
+        $tanggalSampai = $request->input('tanggal_sampai');
 
         $query = Pembayaran::whereIn('booking_id', $bookingIds)
             ->where('status_pembayaran', 'paid')
@@ -260,6 +261,9 @@ class PemilikLaporanController extends Controller
 
     /**
      * Export laporan to Excel
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param string $type
      */
     public function export(Request $request, $type)
     {
@@ -279,6 +283,9 @@ class PemilikLaporanController extends Controller
 
     /**
      * Get monthly revenue data for chart
+     *
+     * @param \Illuminate\Support\Collection $bookingIds
+     * @param int $tahun
      */
     private function getMonthlyRevenueData($bookingIds, $tahun)
     {

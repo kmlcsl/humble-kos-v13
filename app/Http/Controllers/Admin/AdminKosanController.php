@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminKosanController extends Controller
 {
-    protected $kosanService;
+    protected KosanService $kosanService;
 
     public function __construct(KosanService $kosanService)
     {
@@ -29,48 +29,48 @@ class AdminKosanController extends Controller
     {
         $query = Kosan::query();
 
-        // Filter berdasarkan nama (schema: nama_kosan)
-        if ($request->has('search') && !empty($request->search)) {
-            $query->where('nama_kosan', 'like', '%' . $request->search . '%');
+        // Filter pencarian
+        if ($request->has('search') && $request->filled('search')) {
+            $query->where('nama_kosan', 'like', '%' . $request->input('search') . '%');
         }
 
-        // Filter berdasarkan status validasi (schema: status_validasi)
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status_validasi', $request->status);
+        // Filter status validasi
+        if ($request->has('status') && $request->input('status') !== 'all') {
+            $query->where('status_validasi', $request->input('status'));
         }
 
-        // Filter berdasarkan tipe kosan (schema: tipe_kosan)
-        if ($request->has('jenis_kos') && $request->jenis_kos !== 'all') {
-            $query->where('tipe_kosan', $request->jenis_kos);
+        // Filter tipe kosan
+        if ($request->has('jenis_kos') && $request->input('jenis_kos') !== 'all') {
+            $query->where('tipe_kosan', $request->input('jenis_kos'));
         }
 
-        // Filter berdasarkan kota
-        if ($request->has('kota') && !empty($request->kota)) {
-            $query->where('kota', $request->kota);
+        // Filter kota
+        if ($request->has('kota') && $request->filled('kota')) {
+            $query->where('kota', $request->input('kota'));
         }
 
-        // Urutkan
-        $sortField = $request->sort ?? 'created_at';
-        $sortDirection = $request->direction ?? 'desc';
+        // Pengurutan
+        $sortField = $request->input('sort', 'created_at');
+        $sortDirection = $request->input('direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
 
-        // Eager load relationships
+        // Load relasi pemilik
         $query->with(['pemilik']);
 
-        // Get data with pagination
+        // Pagination
         $kosans = $query->paginate(10);
 
-        // Get list of cities for filter
-        $cities = Kosan::select('kota')->distinct()->orderBy('kota')->pluck('kota');
+        // Daftar kota untuk filter
+        $cities = Kosan::query()->select('kota')->distinct()->orderBy('kota')->pluck('kota');
 
-        // Calculate stats per schema
-        $approvedCount = Kosan::where('status_validasi', 'approved')->count();
+        // Statistik
+        $approvedCount = Kosan::query()->where('status_validasi', 'approved')->count();
         $stats = [
-            'total_kosan' => Kosan::count(),
+            'total_kosan' => Kosan::query()->count(),
             'kosan_approved' => $approvedCount,
             'kosan_aktif' => $approvedCount,
-            'total_kamar' => Kamar::count(),
-            'kamar_tersedia' => Kamar::where('status_kamar', 'tersedia')->count(),
+            'total_kamar' => Kamar::query()->count(),
+            'kamar_tersedia' => Kamar::query()->where('status_kamar', 'tersedia')->count(),
             'kosan_unggulan' => 0,
         ];
 
@@ -150,9 +150,6 @@ class AdminKosanController extends Controller
                 $path = $mainPhoto->store('kosan', 'public');
                 $kosan->foto_kosan = $path;
                 $kosan->save();
-
-                // The main photo path is already saved via mass assignment.
-                // No need to create a separate entry in foto_properti for the main photo.
             }
 
             // Upload foto tambahan (2-4)
@@ -191,7 +188,7 @@ class AdminKosanController extends Controller
     /**
      * Menampilkan detail kos
      */
-    public function show($kosan_id)
+    public function show(int $kosan_id)
     {
         $kosan = Kosan::with(['pemilik', 'kamars'])
             ->findOrFail($kosan_id);
@@ -234,22 +231,30 @@ class AdminKosanController extends Controller
     }
 
     /**
-     * Menampilkan form edit (GET) atau menyimpan perubahan (PUT)
+     * Menampilkan form edit kos
      */
-    public function update(Request $request, $kosan_id)
+    public function edit(int $kosan_id)
     {
-        // Jika request GET, tampilkan form edit
-        if ($request->isMethod('get')) {
-            $kosan = Kosan::with(['kamars.fasilitas', 'fotos'])->findOrFail($kosan_id);
-            $owners = User::where('role', 'pemilik_kos')->get();
+        $kosan = Kosan::query()->with(['kamars.fasilitas', 'fotos'])->findOrFail($kosan_id);
+        $owners = User::query()->where('role', 'pemilik_kos')->get();
 
-            return view('admin.manajemen-kosan.update', [
-                'kosan' => $kosan,
-                'owners' => $owners,
-            ]);
+        return view('admin.manajemen-kosan.update', [
+            'kosan' => $kosan,
+            'owners' => $owners,
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan data kos
+     */
+    public function update(Request $request, int $kosan_id)
+    {
+        // Tampilkan form edit jika request GET
+        if ($request->isMethod('get')) {
+            return $this->edit($kosan_id);
         }
 
-        // Jika request PUT, proses update
+        // Validasi input
         $rules = [
             'nama_kosan' => 'required|string|max:150',
             'deskripsi' => 'required|string',
@@ -264,7 +269,6 @@ class AdminKosanController extends Controller
             'harga_tahunan' => 'nullable|numeric|min:0',
         ];
 
-        // Conditionally add rules for file uploads
         if ($request->hasFile('foto_kosan')) {
             $rules['foto_kosan'] = 'image|mimes:jpeg,png,jpg|max:2048';
         }
@@ -282,65 +286,59 @@ class AdminKosanController extends Controller
         DB::beginTransaction();
 
         try {
-            $kosan = Kosan::findOrFail($kosan_id);
-            $kosan->nama_kosan = $request->nama_kosan;
-            $kosan->deskripsi = $request->deskripsi;
-            $kosan->alamat = $request->alamat;
-            $kosan->kota = $request->kota;
-            $kosan->tipe_kosan = $request->jenis_kos;
-            $kosan->peraturan = $request->peraturan ?? $kosan->peraturan;
-            $kosan->latitude = $request->latitude;
-            $kosan->longitude = $request->longitude;
-            $kosan->owner_id = $request->id_pemilik;
+            $kosan = Kosan::query()->findOrFail($kosan_id);
+            $kosan->nama_kosan = $request->input('nama_kosan');
+            $kosan->deskripsi = $request->input('deskripsi');
+            $kosan->alamat = $request->input('alamat');
+            $kosan->kota = $request->input('kota');
+            $kosan->tipe_kosan = $request->input('jenis_kos');
+            $kosan->peraturan = $request->input('peraturan', $kosan->peraturan);
+            $kosan->latitude = $request->input('latitude');
+            $kosan->longitude = $request->input('longitude');
+            $kosan->owner_id = $request->input('id_pemilik');
+            
             if ($request->has('status_validasi')) {
-                $kosan->status_validasi = $request->status_validasi;
+                $kosan->status_validasi = $request->input('status_validasi');
             }
             if ($request->filled('harga_tahunan')) {
-                $kosan->harga_tahunan = $request->harga_tahunan;
+                $kosan->harga_tahunan = $request->input('harga_tahunan');
             }
 
-            // Hapus foto yang ditandai untuk dihapus
+            // Hapus foto yang dipilih
             if ($request->filled('hapus_foto')) {
-                foreach ($request->hapus_foto as $fotoId) {
-                    $foto = FotoProperti::find($fotoId);
-if ($foto && $foto->properti_id == $kosan_id) {
-                        // Hapus file fisik
+                FotoProperti::query()->whereIn('foto_id', $request->input('hapus_foto'))
+                    ->where('properti_id', $kosan_id)
+                    ->get()
+                    ->each(function(FotoProperti $foto) {
                         if (Storage::disk('public')->exists($foto->path_foto)) {
                             Storage::disk('public')->delete($foto->path_foto);
                         }
-                        // Hapus record
                         $foto->delete();
-                    }
-                }
+                    });
             }
 
-            // Update kosan main photo if uploaded
+            // Update foto utama
             if ($request->hasFile('foto_kosan')) {
-                // Delete old photo file if it exists
                 if ($kosan->foto_kosan && Storage::disk('public')->exists($kosan->foto_kosan)) {
                     Storage::disk('public')->delete($kosan->foto_kosan);
                 }
-                // Upload new photo and update the kosan table
-                $mainPhoto = $request->file('foto_kosan');
-                $path = $mainPhoto->store('kosan', 'public');
-                $kosan->foto_kosan = $path; // This is the only place it should be saved
+                $path = $request->file('foto_kosan')->store('kosan', 'public');
+                $kosan->foto_kosan = $path;
             }
 
-            // Upload foto tambahan baru
+            // Upload foto tambahan
             if ($request->hasFile('foto_tambahan')) {
-                // Hitung urutan berikutnya
-                $existingCount = FotoProperti::where('properti_type', 'kosan')
+                $existingCount = FotoProperti::query()->where('properti_type', 'kosan')
                     ->where('properti_id', $kosan_id)
                     ->count();
 
-                $urutan = max(2, $existingCount + 1); // Minimal urutan 2
+                $urutan = max(2, $existingCount + 1);
 
                 foreach ($request->file('foto_tambahan') as $foto) {
-                    // Max 4 foto total
-                    if (FotoProperti::where('properti_type', 'kosan')->where('properti_id', $kosan_id)->count() >= 4) break;
+                    if (FotoProperti::query()->where('properti_type', 'kosan')->where('properti_id', $kosan_id)->count() >= 4) break;
 
                     $path = $foto->store('kosan', 'public');
-                    FotoProperti::create([
+                    FotoProperti::query()->create([
                         'properti_type' => 'kosan',
                         'properti_id' => $kosan->kosan_id,
                         'path_foto' => $path,
@@ -360,15 +358,14 @@ if ($foto && $foto->properti_id == $kosan_id) {
                 ->with('success', 'Kosan berhasil diperbarui!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan saat memperbarui kosan: ' . $e->getMessage())
-                ->withInput();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
     /**
      * Menghapus kos dari database
      */
-    public function destroy($kosan_id)
+    public function destroy(int $kosan_id)
     {
         DB::beginTransaction();
 
@@ -381,16 +378,15 @@ if ($foto && $foto->properti_id == $kosan_id) {
             }
 
             // Delete all foto_properti
-            $fotos = FotoProperti::where('properti_type', 'kosan')
+            FotoProperti::where('properti_type', 'kosan')
                 ->where('properti_id', $kosan_id)
-                ->get();
-
-            foreach ($fotos as $foto) {
-                if (Storage::disk('public')->exists($foto->path_foto)) {
-                    Storage::disk('public')->delete($foto->path_foto);
-                }
-                $foto->delete();
-            }
+                ->get()
+                ->each(function(FotoProperti $foto) {
+                    if (Storage::disk('public')->exists($foto->path_foto)) {
+                        Storage::disk('public')->delete($foto->path_foto);
+                    }
+                    $foto->delete();
+                });
 
             // Delete the kosan (cascade will delete kamars and related data)
             $kosan->delete();
@@ -408,7 +404,7 @@ if ($foto && $foto->properti_id == $kosan_id) {
     /**
      * Toggle status kosan (approved/rejected)
      */
-    public function toggleStatus(Request $request, $kosan_id)
+    public function toggleStatus(Request $request, int $kosan_id)
     {
         try {
             $kosan = Kosan::findOrFail($kosan_id);
@@ -436,7 +432,7 @@ if ($foto && $foto->properti_id == $kosan_id) {
      * Toggle featured kosan (featured/not featured)
      * DISABLED: Field kos_unggulan tidak ada di struktur database yang valid
      */
-    public function toggleFeatured($kosan_id)
+    public function toggleFeatured(int $kosan_id)
     {
         return redirect()->back()
             ->with('error', 'Fitur kos unggulan tidak tersedia karena field tidak ada di database');

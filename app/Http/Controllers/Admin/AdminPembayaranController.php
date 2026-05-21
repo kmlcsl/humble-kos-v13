@@ -14,52 +14,48 @@ class AdminPembayaranController extends Controller
     {
         $query = Pembayaran::query();
 
-        // Filter berdasarkan status
-        if ($request->has('status') && !empty($request->status) && $request->status !== 'all') {
-            // Map user-friendly status to database status
+        // Filter status
+        if ($request->has('status') && $request->filled('status') && $request->input('status') !== 'all') {
             $statusMap = [
-                'successful' => 'paid',
-                'processing' => 'pending',
+                'successful' => Pembayaran::STATUS_PAID,
+                'processing' => Pembayaran::STATUS_PENDING,
             ];
-            $dbStatus = $statusMap[$request->status] ?? $request->status;
+            $dbStatus = $statusMap[$request->input('status')] ?? $request->input('status');
             $query->where('status_pembayaran', $dbStatus);
         }
 
-        // Filter berdasarkan metode pembayaran
-        if ($request->has('metode') && !empty($request->metode) && $request->metode !== 'all') {
-            $query->where('metode_pembayaran', $request->metode);
+        // Filter metode
+        if ($request->has('metode') && $request->filled('metode') && $request->input('metode') !== 'all') {
+            $query->where('metode_pembayaran', $request->input('metode'));
         }
 
-        // Filter berdasarkan tanggal
-        if ($request->has('date_start') && !empty($request->date_start)) {
-            $query->whereDate('created_at', '>=', $request->date_start);
+        // Filter tanggal
+        if ($request->has('date_start') && $request->filled('date_start')) {
+            $query->whereDate('created_at', '>=', $request->input('date_start'));
         }
 
-        if ($request->has('date_end') && !empty($request->date_end)) {
-            $query->whereDate('created_at', '<=', $request->date_end);
+        if ($request->has('date_end') && $request->filled('date_end')) {
+            $query->whereDate('created_at', '<=', $request->input('date_end'));
         }
 
-        // Urutkan
-        $sortField = $request->sort ?? 'created_at';
-        $sortDirection = $request->direction ?? 'desc';
+        // Pengurutan
+        $sortField = $request->input('sort', 'created_at');
+        $sortDirection = $request->input('direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
 
-        // Eager load booking and pengguna without custom selects to match current schema
-        $query->with(['booking', 'booking.user']);
+        // Load relasi
+        $query->with(['booking.user']);
 
-        // Get data with pagination
         $pembayaran = $query->paginate(10);
 
-        // Calculate stats
+        // Statistik
         $stats = [
-            'total_pembayaran' => Pembayaran::count(),
-            'pending_pembayaran' => Pembayaran::where('status_pembayaran', 'pending')->count(),
-            'processing_pembayaran' => Pembayaran::where('status_pembayaran', 'pending')->count(), // pending = processing/menunggu verifikasi
-            'paid_pembayaran' => Pembayaran::where('status_pembayaran', 'paid')->count(),
-            'successful_pembayaran' => Pembayaran::where('status_pembayaran', 'paid')->count(), // paid = successful/sukses
-            'failed_pembayaran' => Pembayaran::where('status_pembayaran', 'failed')->count(),
-            'expired_pembayaran' => Pembayaran::where('status_pembayaran', 'expired')->count(),
-            'total_pendapatan' => Pembayaran::where('status_pembayaran', 'paid')->sum('jumlah_bayar'),
+            'total_pembayaran' => Pembayaran::query()->count(),
+            'pending_pembayaran' => Pembayaran::query()->where('status_pembayaran', Pembayaran::STATUS_PENDING)->count(),
+            'paid_pembayaran' => Pembayaran::query()->where('status_pembayaran', Pembayaran::STATUS_PAID)->count(),
+            'failed_pembayaran' => Pembayaran::query()->where('status_pembayaran', Pembayaran::STATUS_FAILED)->count(),
+            'expired_pembayaran' => Pembayaran::query()->where('status_pembayaran', Pembayaran::STATUS_EXPIRED)->count(),
+            'total_pendapatan' => Pembayaran::query()->where('status_pembayaran', Pembayaran::STATUS_PAID)->sum('jumlah_bayar'),
         ];
 
         return view('admin.pembayaran.index', [
@@ -165,7 +161,7 @@ class AdminPembayaranController extends Controller
     /**
      * Menampilkan detail pembayaran
      */
-    public function show($id)
+    public function show(int $id)
     {
         $pembayaran = Pembayaran::with([
             'booking',
@@ -181,7 +177,7 @@ class AdminPembayaranController extends Controller
     /**
      * Menyetujui pembayaran
      */
-    public function approve($id)
+    public function approve(int $id)
     {
         DB::beginTransaction();
 
@@ -223,7 +219,7 @@ class AdminPembayaranController extends Controller
     /**
      * Menolak pembayaran
      */
-    public function reject($id)
+    public function reject(int $id)
     {
         DB::beginTransaction();
 

@@ -4,7 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * @property int $foto_id
+ * @property string $properti_type
+ * @property int $properti_id
+ * @property string $path_foto
+ * @property int $urutan
+ * @property bool $is_utama
+ * @property string|null $caption
+ * @property int|null $ukuran_file
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class FotoProperti extends Model
 {
     use HasFactory;
@@ -43,7 +56,7 @@ class FotoProperti extends Model
     /**
      * Scope untuk mendapatkan foto utama
      */
-    public function scopeUtama($query)
+    public function scopeUtama(Builder $query)
     {
         return $query->where('is_utama', true)
                      ->orWhere('urutan', 1)
@@ -53,7 +66,7 @@ class FotoProperti extends Model
     /**
      * Scope untuk mendapatkan foto tambahan
      */
-    public function scopeTambahan($query)
+    public function scopeTambahan(Builder $query)
     {
         return $query->where('is_utama', false)
                      ->where('urutan', '>', 1)

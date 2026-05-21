@@ -5,6 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $kosan_id
+ * @property int $owner_id
+ * @property string $nama_kosan
+ * @property string $alamat
+ * @property string $kota
+ * @property string|null $deskripsi
+ * @property string $tipe_kosan
+ * @property string|null $peraturan
+ * @property string|null $foto_kosan
+ * @property float|null $rating_rata
+ * @property string $status_validasi
+ * @property float|null $latitude
+ * @property float|null $longitude
+ * @property array|null $favorit
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Kosan extends Model
 {
     use HasFactory;
@@ -92,6 +110,9 @@ class Kosan extends Model
         return $path ? (object) ['path_gambar' => $path] : null;
     }
 
+    /**
+     * @param int|null $idPengguna
+     */
     public function difavoritkanOleh($idPengguna)
     {
         if (!$idPengguna || !$this->favorit) {
@@ -176,5 +197,13 @@ class Kosan extends Model
             'rejected' => 'Ditolak',
             default => ucfirst($this->status_validasi),
         };
+    }
+
+    public function getKamarTersediaAttribute()
+    {
+        if ($this->relationLoaded('kamars')) {
+            return $this->kamars->where('status_kamar', 'tersedia')->count();
+        }
+        return $this->kamars()->where('status_kamar', 'tersedia')->count();
     }
 }

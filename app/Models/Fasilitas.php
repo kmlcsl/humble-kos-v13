@@ -4,6 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $fasilitas_id
+ * @property string $nama_fasilitas
+ * @property string|null $icon_fasilitas
+ * @property string|null $deskripsi
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Fasilitas extends Model
 {
     protected $table = 'fasilitas';

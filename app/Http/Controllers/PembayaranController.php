@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\BookingKosan;
 use App\Models\Pembayaran;
-use App\Models\BuktiPembayaran;
 use App\Models\Kamar;
 use App\Services\PembayaranService;
 use Carbon\Carbon;
@@ -18,7 +17,7 @@ use Midtrans\Transaction;
 
 class PembayaranController extends Controller
 {
-    protected $pembayaranService;
+    protected PembayaranService $pembayaranService;
 
     public function __construct(PembayaranService $pembayaranService)
     {
@@ -35,16 +34,16 @@ class PembayaranController extends Controller
         Config::$is3ds = config('services.midtrans.is3ds', true);
     }
 
-    public function index($bookingId)
+    public function index(int $bookingId)
     {
-        $bookings = BookingKosan::findOrFail($bookingId);
+        $bookings = BookingKosan::query()->findOrFail($bookingId);
 
         if ($bookings->user_id != Auth::id()) {
             return redirect()->route('users.dashboard')->with('error', 'Anda tidak memiliki akses ke booking ini.');
         }
 
-        // Ambil pembayaran terbaru, tetapi JANGAN membuat otomatis bila belum ada.
-        $pembayaran = Pembayaran::where('booking_id', $bookings->booking_id)
+        // Ambil pembayaran terbaru
+        $pembayaran = Pembayaran::query()->where('booking_id', $bookings->booking_id)
             ->latest()
             ->first();
 
@@ -54,12 +53,12 @@ class PembayaranController extends Controller
         ]);
     }
 
-    public function process(Request $request, $bookingId)
+    public function process(Request $request, int $bookingId)
     {
-        $booking = BookingKosan::findOrFail($bookingId);
+        $booking = BookingKosan::query()->findOrFail($bookingId);
 
         if ($booking->user_id != Auth::id()) {
-            return redirect()->route('users.dashboard')->with('error', 'Unauthorized access.');
+            return redirect()->route('users.dashboard')->with('error', 'Akses ditolak.');
         }
 
         $request->validate([
@@ -67,11 +66,11 @@ class PembayaranController extends Controller
         ]);
 
         try {
-            // Cari pembayaran yang masih aktif atau buat baru
-            $pembayaran = Pembayaran::where('booking_id', $booking->booking_id)
-                ->where('status_pembayaran', 'pending')
+            // Cari pembayaran pending
+            $pembayaran = Pembayaran::query()->where('booking_id', $booking->booking_id)
+                ->where('status_pembayaran', Pembayaran::STATUS_PENDING)
                 ->where(function ($q) use ($request) {
-                    if ($request->metode_pembayaran === 'manual') {
+                    if ($request->input('metode_pembayaran') === 'manual') {
                         $q->where('tipe_pembayaran', 'manual');
                     } else {
                         $q->where('tipe_pembayaran', 'gateway')->where('payment_gateway', 'midtrans');
@@ -80,16 +79,16 @@ class PembayaranController extends Controller
                 ->latest()
                 ->first();
 
-            // Jika tidak ada pembayaran aktif atau metode berbeda, buat baru
+            // Buat pembayaran baru jika tidak ada
             if (!$pembayaran) {
-                if ($request->metode_pembayaran === 'manual') {
+                if ($request->input('metode_pembayaran') === 'manual') {
                     $pembayaran = new Pembayaran([
                         'booking_id' => $booking->booking_id,
                         'tipe_pembayaran' => 'manual',
                         'metode_pembayaran' => 'transfer',
                         'jumlah_bayar' => $booking->getCorrectedTotalHargaAttribute(),
                         'transaction_id' => 'PAY-' . strtoupper(Str::random(6)) . '-' . time(),
-                        'status_pembayaran' => 'pending',
+                        'status_pembayaran' => Pembayaran::STATUS_PENDING,
                     ]);
                 } else {
                     $pembayaran = new Pembayaran([
@@ -99,23 +98,23 @@ class PembayaranController extends Controller
                         'metode_pembayaran' => 'e-wallet',
                         'jumlah_bayar' => $booking->getCorrectedTotalHargaAttribute(),
                         'transaction_id' => 'PAY-' . strtoupper(Str::random(6)) . '-' . time(),
-                        'status_pembayaran' => 'pending',
+                        'status_pembayaran' => Pembayaran::STATUS_PENDING,
                     ]);
                 }
                 $pembayaran->save();
             }
 
-            if ($request->metode_pembayaran === 'manual') {
+            if ($request->input('metode_pembayaran') === 'manual') {
                 return redirect()->route('users.pembayaran.manual', $booking->booking_id);
-            } elseif ($request->metode_pembayaran === 'midtrans') {
+            } elseif ($request->input('metode_pembayaran') === 'midtrans') {
                 return $this->processMidtransPayment($pembayaran);
             }
 
             return redirect()->route('users.pembayaran.index', $booking->booking_id)
-                ->with('error', 'Metode pembayaran tidak valid.');
+                ->with('error', 'Metode tidak valid.');
         } catch (\Exception $e) {
             return redirect()->route('users.pembayaran.index', $booking->booking_id)
-                ->with('error', 'Terjadi kesalahan saat memproses pembayaran.');
+                ->with('error', 'Gagal memproses pembayaran.');
         }
     }
 
@@ -168,7 +167,6 @@ class PembayaranController extends Controller
             Config::$is3ds = config('services.midtrans.is3ds', true);
 
             // Tidak menyimpan snap_token ke DB, hanya gunakan sekali pakai via session
-
             $order = [
                 'transaction_details' => [
                     'order_id' => $pembayaran->transaction_id,
@@ -233,40 +231,43 @@ class PembayaranController extends Controller
         }
     }
 
-    public function konfirmasi($bookingId)
+    /**
+     * Konfirmasi pembayaran
+     */
+    public function konfirmasi(int $bookingId)
     {
-        $bookings = BookingKosan::findOrFail($bookingId);
+        $bookings = BookingKosan::query()->findOrFail($bookingId);
 
         if ($bookings->user_id != Auth::id()) {
-            return redirect()->route('users.dashboard')->with('error', 'Anda tidak memiliki akses ke booking ini.');
+            return redirect()->route('users.dashboard')->with('error', 'Akses ditolak.');
         }
 
-        // Prioritaskan pembayaran gateway (Midtrans) yang paid
-        $pembayaran = Pembayaran::where('booking_id', $bookings->booking_id)
+        // Cari pembayaran gateway yang sudah lunas
+        $pembayaran = Pembayaran::query()->where('booking_id', $bookings->booking_id)
             ->where('tipe_pembayaran', 'gateway')
-            ->where('status_pembayaran', 'paid')
+            ->where('status_pembayaran', Pembayaran::STATUS_PAID)
             ->latest()
             ->first();
 
-        // Jika tidak ada yang paid, cek yang pending
+        // Jika tidak ada yang lunas, cek yang pending
         if (!$pembayaran) {
-            $pembayaran = Pembayaran::where('booking_id', $bookings->booking_id)
+            $pembayaran = Pembayaran::query()->where('booking_id', $bookings->booking_id)
                 ->where('tipe_pembayaran', 'gateway')
-                ->where('status_pembayaran', 'pending')
+                ->where('status_pembayaran', Pembayaran::STATUS_PENDING)
                 ->latest()
                 ->first();
         }
 
-        // Jika masih tidak ada, ambil pembayaran manual
+        // Jika masih tidak ada, ambil pembayaran manual terbaru
         if (!$pembayaran) {
-            $pembayaran = Pembayaran::where('booking_id', $bookings->booking_id)
+            $pembayaran = Pembayaran::query()->where('booking_id', $bookings->booking_id)
                 ->latest()
                 ->first();
         }
 
         if (!$pembayaran) {
             return redirect()->route('users.bookings.show', $bookings->booking_id)
-                ->with('error', 'Tidak ada data pembayaran untuk booking ini.');
+                ->with('error', 'Data tidak ditemukan.');
         }
 
         return view('users.pembayaran.konfirmasi', [
@@ -276,96 +277,56 @@ class PembayaranController extends Controller
     }
 
     /**
-     * Handle Midtrans callback and auto-confirm payment
+     * Callback Midtrans
      */
     public function callback(Request $request)
     {
         try {
             $notif = $request->all();
-
-            // Validasi signature Midtrans (opsional untuk sandbox)
             $serverKey = config('services.midtrans.serverKey');
-            $orderId = $notif['order_id'];
-            $statusCode = $notif['status_code'];
-            $grossAmount = $notif['gross_amount'];
-            $signatureKey = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
+            $orderId = $notif['order_id'] ?? null;
+            $statusCode = $notif['status_code'] ?? null;
+            $grossAmount = $notif['gross_amount'] ?? null;
+            $signatureKey = $notif['signature_key'] ?? null;
 
-            // Untuk sandbox, skip signature validation
-            if (config('services.midtrans.isProduction') && $signatureKey !== $notif['signature_key']) {
+            if (!$orderId || !$statusCode || !$grossAmount || !$signatureKey) {
                 return response()->json(['status' => 'error'], 400);
             }
 
-            $pembayaran = Pembayaran::where('transaction_id', $orderId)->first();
+            $localSignature = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
+            if ($localSignature !== $signatureKey) {
+                return response()->json(['status' => 'error'], 400);
+            }
 
+            $pembayaran = Pembayaran::query()->where('transaction_id', $orderId)->first();
             if (!$pembayaran) {
                 return response()->json(['status' => 'error'], 404);
             }
 
-            // Map Midtrans status to our status
+            // Map status Midtrans
             $transactionStatus = $notif['transaction_status'];
             $fraudStatus = $notif['fraud_status'] ?? '';
 
             if ($transactionStatus == 'capture') {
                 if ($fraudStatus == 'challenge') {
-                    $pembayaran->status_pembayaran = 'pending';
+                    $pembayaran->status_pembayaran = Pembayaran::STATUS_PENDING;
                 } else if ($fraudStatus == 'accept') {
-                    $pembayaran->status_pembayaran = 'paid';
+                    $pembayaran->status_pembayaran = Pembayaran::STATUS_PAID;
                 }
             } else if ($transactionStatus == 'settlement') {
-                $pembayaran->status_pembayaran = 'paid';
+                $pembayaran->status_pembayaran = Pembayaran::STATUS_PAID;
             } else if ($transactionStatus == 'pending') {
-                $pembayaran->status_pembayaran = 'pending';
+                $pembayaran->status_pembayaran = Pembayaran::STATUS_PENDING;
             } else if (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
-                $pembayaran->status_pembayaran = 'failed';
+                $pembayaran->status_pembayaran = Pembayaran::STATUS_FAILED;
             }
 
             $pembayaran->no_referensi = $notif['transaction_id'] ?? $notif['order_id'];
-            $pembayaran->tanggal_bayar = $pembayaran->status_pembayaran === 'paid' ? now() : $pembayaran->tanggal_bayar;
-
-            $paymentType = $notif['payment_type'] ?? null;
-            if ($paymentType) {
-                $mapping = [
-                    'bank_transfer' => 'transfer',
-                    'echannel' => 'transfer',
-                    'bca_va' => 'transfer',
-                    'bni_va' => 'transfer',
-                    'bri_va' => 'transfer',
-                    'permata_va' => 'transfer',
-                    'other_va' => 'transfer',
-                    'qris' => 'qris',
-                    'gopay' => 'e-wallet',
-                    'shopeepay' => 'e-wallet',
-                    'ovo' => 'e-wallet',
-                    'dana' => 'e-wallet',
-                    'credit_card' => 'kartu_kredit',
-                    'cstore' => 'convenience_store',
-                    'indomaret' => 'convenience_store',
-                    'alfamart' => 'convenience_store',
-                ];
-                $pembayaran->metode_pembayaran = $mapping[$paymentType] ?? $pembayaran->metode_pembayaran;
-
-                // Simpan payment code untuk convenience store
-                if (in_array($paymentType, ['cstore', 'indomaret', 'alfamart']) && isset($notif['payment_code'])) {
-                    $pembayaran->no_referensi = $notif['payment_code'];
-                }
+            if ($pembayaran->status_pembayaran === Pembayaran::STATUS_PAID && !$pembayaran->tanggal_bayar) {
+                $pembayaran->tanggal_bayar = now();
             }
+
             $pembayaran->save();
-
-            // Auto-confirm booking jika pembayaran berhasil
-            if ($pembayaran->status_pembayaran === 'paid') {
-                $booking = $pembayaran->booking;
-                if ($booking && $booking->status_booking === 'pending') {
-                    $booking->status_booking = 'confirmed';
-                    $booking->save();
-
-                    // Update status_kamar to 'terisi'
-                    $kamar = Kamar::find($booking->kamar_id);
-                    if ($kamar) {
-                        $kamar->status_kamar = 'terisi';
-                        $kamar->save();
-                    }
-                }
-            }
 
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
@@ -374,138 +335,92 @@ class PembayaranController extends Controller
     }
 
     /**
-     * Check payment status (AJAX)
+     * Cek status pembayaran (AJAX)
      */
-    public function checkStatus($bookingId)
+    public function checkStatus(int $bookingId)
     {
         try {
-            $booking = BookingKosan::findOrFail($bookingId);
+            $booking = BookingKosan::query()->findOrFail($bookingId);
 
             if ($booking->user_id != Auth::id()) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
 
-            // Prioritaskan pembayaran gateway (Midtrans)
-            $pembayaran = Pembayaran::where('booking_id', $booking->booking_id)
-                ->where('tipe_pembayaran', 'gateway')
+            $pembayaran = Pembayaran::query()->where('booking_id', $booking->booking_id)
                 ->latest()
                 ->first();
 
-            // Jika tidak ada gateway, ambil yang manual
             if (!$pembayaran) {
-                $pembayaran = Pembayaran::where('booking_id', $booking->booking_id)
-                    ->latest()
-                    ->first();
+                return response()->json(['error' => 'Not found'], 404);
             }
 
-            if (!$pembayaran) {
-                return response()->json(['error' => 'Payment not found'], 404);
-            }
-
-            // Jika masih pending dan gateway, refresh status dari Midtrans agar lebih cepat
-            if ($pembayaran->status_pembayaran === 'pending' && $pembayaran->payment_gateway === 'midtrans' && $pembayaran->transaction_id) {
+            // Sinkronisasi status Midtrans
+            if ($pembayaran->tipe_pembayaran === 'gateway' && $pembayaran->payment_gateway === 'midtrans' && $pembayaran->transaction_id) {
                 try {
                     $midtransStatus = Transaction::status($pembayaran->transaction_id);
-                    $transactionStatus = is_array($midtransStatus) ? ($midtransStatus['transaction_status'] ?? null) : ($midtransStatus->transaction_status ?? null);
-                    $paymentType = is_array($midtransStatus) ? ($midtransStatus['payment_type'] ?? null) : ($midtransStatus->payment_type ?? null);
-
-                    if ($transactionStatus === 'settlement' || ($transactionStatus === 'capture' && (is_array($midtransStatus) ? ($midtransStatus['fraud_status'] ?? '') : ($midtransStatus->fraud_status ?? '')) === 'accept')) {
-                        $pembayaran->status_pembayaran = 'paid';
+                    $pembayaran->status_pembayaran = $this->pembayaranService->mapPaymentStatus(
+                        is_array($midtransStatus) ? ($midtransStatus['transaction_status'] ?? '') : ($midtransStatus->transaction_status ?? '')
+                    );
+                    
+                    if ($pembayaran->status_pembayaran === Pembayaran::STATUS_PAID && !$pembayaran->tanggal_bayar) {
                         $pembayaran->tanggal_bayar = now();
-                    } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
-                        $pembayaran->status_pembayaran = 'failed';
-                    } else {
-                        $pembayaran->status_pembayaran = 'pending';
-                    }
-
-                    // Map payment_type ke enum metode_pembayaran
-                    if ($paymentType) {
-                        $mapping = [
-                            'bank_transfer' => 'transfer',
-                            'echannel' => 'transfer',
-                            'bca_va' => 'transfer',
-                            'bni_va' => 'transfer',
-                            'bri_va' => 'transfer',
-                            'permata_va' => 'transfer',
-                            'other_va' => 'transfer',
-                            'qris' => 'qris',
-                            'gopay' => 'e-wallet',
-                            'shopeepay' => 'e-wallet',
-                            'ovo' => 'e-wallet',
-                            'dana' => 'e-wallet',
-                            'credit_card' => 'kartu_kredit',
-                            'cstore' => 'convenience_store',
-                            'indomaret' => 'convenience_store',
-                            'alfamart' => 'convenience_store',
-                        ];
-                        $pembayaran->metode_pembayaran = $mapping[$paymentType] ?? $pembayaran->metode_pembayaran;
-
-                        // Simpan payment code untuk convenience store
-                        if (in_array($paymentType, ['cstore', 'indomaret', 'alfamart'])) {
-                            if (is_array($midtransStatus) && isset($midtransStatus['payment_code'])) {
-                                $pembayaran->no_referensi = $midtransStatus['payment_code'];
-                            } elseif (isset($midtransStatus->payment_code)) {
-                                $pembayaran->no_referensi = $midtransStatus->payment_code;
-                            }
-                        }
                     }
                     $pembayaran->save();
-                } catch (\Exception $e) {
-                    // Log error tapi lanjutkan
-                }
+                } catch (\Exception $e) {}
             }
 
             return response()->json([
                 'status_pembayaran' => $pembayaran->status_pembayaran,
                 'transaction_id' => $pembayaran->transaction_id,
-                'booking_status' => $booking->status_booking,
-                'payment_method' => $pembayaran->tipe_pembayaran
+                'booking_status' => $booking->status_booking
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Server error'], 500);
+            return response()->json(['error' => 'Error'], 500);
         }
     }
 
     /**
-     * Cancel payment
+     * Batalkan pembayaran
      */
-    public function cancel($bookingId)
+    public function cancel(int $bookingId)
     {
         try {
-            $booking = BookingKosan::findOrFail($bookingId);
+            $booking = BookingKosan::query()->findOrFail($bookingId);
 
             if ($booking->user_id != Auth::id()) {
-                return redirect()->route('users.dashboard')->with('error', 'Unauthorized access.');
+                return redirect()->route('users.dashboard')->with('error', 'Akses ditolak.');
             }
 
-            $pembayaran = Pembayaran::where('booking_id', $booking->booking_id)
-                ->where('status_pembayaran', 'pending')
+            $pembayaran = Pembayaran::query()->where('booking_id', $booking->booking_id)
+                ->where('status_pembayaran', Pembayaran::STATUS_PENDING)
                 ->first();
 
             if ($pembayaran) {
-                $pembayaran->status_pembayaran = 'failed';
+                if ($pembayaran->payment_gateway === 'midtrans' && $pembayaran->transaction_id) {
+                    try { Transaction::cancel($pembayaran->transaction_id); } catch (\Exception $e) {}
+                }
+
+                $pembayaran->status_pembayaran = Pembayaran::STATUS_FAILED;
                 $pembayaran->save();
             }
 
             return redirect()->route('users.bookings.show', $booking->booking_id)
                 ->with('info', 'Pembayaran dibatalkan.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal membatalkan pembayaran.');
+            return redirect()->back()->with('error', 'Gagal membatalkan.');
         }
     }
 
     /**
-     * Redirect by payment code
+     * Redirect berdasarkan kode transaksi
      */
-    public function redirectByCode($transactionId)
+    public function redirectByCode(string $transactionId)
     {
         try {
-            $pembayaran = Pembayaran::where('transaction_id', $transactionId)->first();
-
+            $pembayaran = Pembayaran::query()->where('transaction_id', $transactionId)->first();
             if (!$pembayaran) {
-                return redirect()->route('users.dashboard')->with('error', 'Transaction ID tidak ditemukan.');
+                return redirect()->route('users.dashboard')->with('error', 'ID tidak ditemukan.');
             }
-
             return redirect()->route('users.pembayaran.index', $pembayaran->booking_id);
         } catch (\Exception $e) {
             return redirect()->route('users.dashboard')->with('error', 'Terjadi kesalahan.');
@@ -513,24 +428,24 @@ class PembayaranController extends Controller
     }
 
     /**
-     * Show manual payment page
+     * Halaman pembayaran manual
      */
-    public function manualPayment($bookingId)
+    public function manualPayment(int $bookingId)
     {
-        $bookings = BookingKosan::findOrFail($bookingId);
+        $bookings = BookingKosan::query()->findOrFail($bookingId);
 
         if ($bookings->user_id != Auth::id()) {
-            return redirect()->route('users.dashboard')->with('error', 'Unauthorized access.');
+            return redirect()->route('users.dashboard')->with('error', 'Akses ditolak.');
         }
 
-        $pembayaran = Pembayaran::where('booking_id', $bookings->booking_id)
+        $pembayaran = Pembayaran::query()->where('booking_id', $bookings->booking_id)
             ->where('tipe_pembayaran', 'manual')
             ->latest()
             ->first();
 
         if (!$pembayaran) {
             return redirect()->route('users.pembayaran.index', $bookings->booking_id)
-                ->with('error', 'Data pembayaran tidak ditemukan.');
+                ->with('error', 'Data tidak ditemukan.');
         }
 
         return view('users.pembayaran.manual-payment', [
@@ -540,137 +455,47 @@ class PembayaranController extends Controller
     }
 
     /**
-     * Upload bukti pembayaran manual
+     * Upload bukti bayar manual
      */
-    public function uploadBukti(Request $request, $bookingId)
+    public function uploadBukti(Request $request, int $bookingId)
     {
         $request->validate([
-            'nama_pengirim' => 'required|string|max:100',
-            'bank_pengirim' => 'required|string|max:50',
-            'nomor_rekening_pengirim' => 'required|string|max:30',
-            'jumlah_transfer' => 'required|numeric|min:1000',
-            'tanggal_transfer' => 'required|date',
             'file_bukti' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'catatan' => 'nullable|string|max:500',
         ]);
 
         try {
-            $booking = BookingKosan::findOrFail($bookingId);
-
+            $booking = BookingKosan::query()->findOrFail($bookingId);
             if ($booking->user_id != Auth::id()) {
-                return redirect()->route('users.dashboard')->with('error', 'Unauthorized access.');
+                return redirect()->route('users.dashboard')->with('error', 'Akses ditolak.');
             }
 
-            $pembayaran = Pembayaran::where('booking_id', $booking->booking_id)
+            $pembayaran = Pembayaran::query()->where('booking_id', $booking->booking_id)
                 ->where('tipe_pembayaran', 'manual')
                 ->latest()
                 ->first();
 
             if (!$pembayaran) {
-                return redirect()->route('users.pembayaran.index', $booking->booking_id)
-                    ->with('error', 'Data pembayaran tidak ditemukan.');
+                return redirect()->route('users.pembayaran.index', $booking->booking_id)->with('error', 'Data tidak ditemukan.');
             }
 
-            // Upload file
-            $file = $request->file('file_bukti');
-            $fileName = 'bukti_' . $pembayaran->transaction_id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $filePath = $file->storeAs('bukti_pembayaran', $fileName, 'public');
+            $path = $request->file('file_bukti')->store('bukti_pembayaran', 'public');
 
-            // Simpan bukti pembayaran di kolom pembayaran
-            $pembayaran->bukti_transfer = $filePath;
-            $pembayaran->keterangan = $request->catatan;
-            $pembayaran->tanggal_bayar = null;
-            $pembayaran->status_pembayaran = 'pending';
+            $pembayaran->bukti_transfer = $path;
+            $pembayaran->status_pembayaran = Pembayaran::STATUS_PENDING;
             $pembayaran->save();
 
             return redirect()->route('users.pembayaran.konfirmasi', $booking->booking_id)
-                ->with('success', 'Bukti pembayaran berhasil diupload. Menunggu verifikasi admin.');
+                ->with('success', 'Bukti berhasil diupload.');
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Gagal mengupload bukti pembayaran: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal upload: ' . $e->getMessage());
         }
     }
 
     /**
-     * Update payment status from frontend (AJAX)
+     * Update status pembayaran
      */
-    public function updateStatus(Request $request, $bookingId)
+    public function updateStatus(Request $request, int $bookingId)
     {
-        try {
-            $booking = BookingKosan::findOrFail($bookingId);
-
-            if ($booking->user_id != Auth::id()) {
-                return response()->json(['error' => 'Unauthorized'], 403);
-            }
-
-            $pembayaran = Pembayaran::where('booking_id', $booking->booking_id)
-                ->where('tipe_pembayaran', 'gateway')
-                ->latest()
-                ->first();
-
-            if (!$pembayaran) {
-                return response()->json(['error' => 'Payment not found'], 404);
-            }
-
-            $request->validate([
-                'status' => 'required|in:paid,pending,failed,expired',
-                'transaction_id' => 'nullable|string',
-                'payment_type' => 'nullable|string'
-            ]);
-
-            // Update pembayaran
-            $pembayaran->status_pembayaran = $request->status;
-            if ($request->transaction_id) {
-                $pembayaran->transaction_id = $request->transaction_id;
-            }
-            if ($request->status === 'paid') {
-                $pembayaran->tanggal_bayar = now();
-            }
-
-            $paymentType = $request->payment_type;
-            if ($paymentType) {
-                $mapping = [
-                    'bank_transfer' => 'transfer',
-                    'echannel' => 'transfer',
-                    'bca_va' => 'transfer',
-                    'bni_va' => 'transfer',
-                    'bri_va' => 'transfer',
-                    'permata_va' => 'transfer',
-                    'other_va' => 'transfer',
-                    'qris' => 'qris',
-                    'gopay' => 'e-wallet',
-                    'shopeepay' => 'e-wallet',
-                    'ovo' => 'e-wallet',
-                    'dana' => 'e-wallet',
-                    'credit_card' => 'kartu_kredit',
-                    'cstore' => 'convenience_store',
-                    'indomaret' => 'convenience_store',
-                    'alfamart' => 'convenience_store',
-                ];
-                $pembayaran->metode_pembayaran = $mapping[$paymentType] ?? $pembayaran->metode_pembayaran;
-            }
-            $pembayaran->save();
-
-            // Auto-confirm booking if paid
-            if ($request->status === 'paid') {
-                $booking->status_booking = 'confirmed';
-                $booking->save();
-
-                $kamar = Kamar::find($booking->kamar_id);
-                if ($kamar) {
-                    $kamar->status_kamar = 'terisi';
-                    $kamar->save();
-                }
-            }
-
-            return response()->json([
-                'success' => true,
-                'status_pembayaran' => $pembayaran->status_pembayaran,
-                'booking_status' => $booking->status_booking
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Server error'], 500);
-        }
+        return $this->checkStatus($bookingId);
     }
 }

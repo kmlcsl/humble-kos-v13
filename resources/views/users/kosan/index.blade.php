@@ -4,16 +4,16 @@
 
 @section('content')
     <!-- Kosan Header Section -->
-    <div class="kosan-header mb-4">
+    <div class="kosan-header mb-4 py-3">
         <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                <div class="mb-3 mb-md-0">
                     <h1 class="kosan-title">Daftar Kosan</h1>
-                    <p class="text-muted">Temukan kosan terbaik sesuai dengan kebutuhan Anda</p>
+                    <p class="text-muted mb-0">Temukan kosan terbaik sesuai dengan kebutuhan Anda</p>
                 </div>
-                <div class="kosan-actions">
+                <div class="kosan-actions d-flex gap-2 justify-content-md-end">
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown"
+                        <button class="btn btn-outline-secondary dropdown-toggle action-btn-equal" type="button" id="sortDropdown"
                             data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-sort me-1"></i> Urutkan
                         </button>
@@ -32,7 +32,7 @@
                                     Tertinggi</a></li>
                         </ul>
                     </div>
-                    <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#filterModal">
+                    <button class="btn btn-primary action-btn-equal" data-bs-toggle="modal" data-bs-target="#filterModal">
                         <i class="fas fa-filter me-1"></i> Filter
                     </button>
                 </div>
@@ -43,13 +43,11 @@
     <!-- Filter Active Tags -->
     @if (request()->has('keyword') ||
             request()->has('kota') ||
-            request()->has('jenis_kos') ||
+            request()->has('tipe_kosan') ||
             request()->has('harga_min') ||
             request()->has('harga_max') ||
-            request()->has('fasilitas_wifi') ||
-            request()->has('fasilitas_ac') ||
-            request()->has('fasilitas_kamar_mandi_dalam') ||
-            request()->has('fasilitas_parkir'))
+            request()->has('kampus') ||
+            request()->has('fasilitas'))
         <div class="filter-tags mb-4">
             <div class="container-fluid">
                 <div class="d-flex align-items-center">
@@ -71,10 +69,18 @@
                             </div>
                         @endif
 
-                        @if (request()->has('jenis_kos') && !empty(request()->jenis_kos))
+                        @if (request()->has('kampus') && !empty(request()->kampus))
                             <div class="filter-tag">
-                                <span>Jenis: {{ ucfirst(request()->jenis_kos) }}</span>
-                                <a href="{{ route('users.kosan.index', array_merge(request()->except('jenis_kos'), ['jenis_kos' => ''])) }}"
+                                <span>Kampus: {{ request()->kampus }}</span>
+                                <a href="{{ route('users.kosan.index', array_merge(request()->except('kampus'), ['kampus' => ''])) }}"
+                                    class="filter-tag-remove"><i class="fas fa-times"></i></a>
+                            </div>
+                        @endif
+
+                        @if (request()->has('tipe_kosan') && !empty(request()->tipe_kosan))
+                            <div class="filter-tag">
+                                <span>Jenis: {{ ucfirst(request()->tipe_kosan) }}</span>
+                                <a href="{{ route('users.kosan.index', array_merge(request()->except('tipe_kosan'), ['tipe_kosan' => ''])) }}"
                                     class="filter-tag-remove"><i class="fas fa-times"></i></a>
                             </div>
                         @endif
@@ -83,20 +89,17 @@
                             (request()->has('harga_min') && !empty(request()->harga_min)) ||
                                 (request()->has('harga_max') && !empty(request()->harga_max)))
                             <div class="filter-tag">
-                                <span>Harga: {{ number_format(request()->harga_min, 0, ',', '.') }} -
-                                    {{ number_format(request()->harga_max, 0, ',', '.') }}</span>
-                                <a href="{{ route('users.kosan.index', array_merge(request()->except(['harga_min', 'harga_max']), ['harga_min' => '', 'harga_max' => ''])) }}"
+                                <span>Harga: {{ request()->harga_min ? number_format(request()->harga_min, 0, ',', '.') : '0' }} -
+                                    {{ request()->harga_max ? number_format(request()->harga_max, 0, ',', '.') : '~' }}</span>
+                                <a href="{{ route('users.kosan.index', array_merge(request()->except(['harga_min', 'harga_max']))) }}"
                                     class="filter-tag-remove"><i class="fas fa-times"></i></a>
                             </div>
                         @endif
 
-                        @if (request()->has('fasilitas_wifi') ||
-                                request()->has('fasilitas_ac') ||
-                                request()->has('fasilitas_kamar_mandi_dalam') ||
-                                request()->has('fasilitas_parkir'))
+                        @if (request()->has('fasilitas') && is_array(request()->fasilitas))
                             <div class="filter-tag">
-                                <span>Fasilitas</span>
-                                <a href="{{ route('users.kosan.index', array_merge(request()->except(['fasilitas_wifi', 'fasilitas_ac', 'fasilitas_kamar_mandi_dalam', 'fasilitas_parkir']))) }}"
+                                <span>Fasilitas: {{ implode(', ', request()->fasilitas) }}</span>
+                                <a href="{{ route('users.kosan.index', array_merge(request()->except(['fasilitas']))) }}"
                                     class="filter-tag-remove"><i class="fas fa-times"></i></a>
                             </div>
                         @endif
@@ -154,7 +157,11 @@
                                     class="badge {{ $kosan->jenis_kos == 'putra' ? 'bg-primary' : ($kosan->jenis_kos == 'putri' ? 'bg-danger' : 'bg-success') }}">
                                     Kos {{ ucfirst($kosan->jenis_kos) }}
                                 </span>
-                                <span class="badge bg-info">{{ $kosan->kamar_tersedia }} kamar tersedia</span>
+                                @if ($kosan->kamar_tersedia > 0)
+                                    <span class="badge bg-info">{{ $kosan->kamar_tersedia }} kamar tersedia</span>
+                                @else
+                                    <span class="badge bg-danger">Kamar penuh</span>
+                                @endif
                             </div>
                             <div class="kosan-facilities mt-2">
                                 @if ($kosan->fasilitas_wifi)
@@ -244,15 +251,20 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="jenis_kos" class="form-label">Jenis Kos</label>
-                                    <select class="form-select" id="jenis_kos" name="jenis_kos">
+                                    <label for="kampus" class="form-label">Dekat Kampus</label>
+                                    <select class="form-select" id="kampus" name="kampus">
+                                        <option value="">Semua Kampus</option>
+                                        <option value="Universitas Teuku Umar" {{ request()->kampus == 'Universitas Teuku Umar' ? 'selected' : '' }}>Universitas Teuku Umar</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="tipe_kosan" class="form-label">Jenis Kos</label>
+                                    <select class="form-select" id="tipe_kosan" name="tipe_kosan">
                                         <option value="">Semua Jenis</option>
-                                        <option value="putra" {{ request()->jenis_kos == 'putra' ? 'selected' : '' }}>Kos
-                                            Putra</option>
-                                        <option value="putri" {{ request()->jenis_kos == 'putri' ? 'selected' : '' }}>Kos
-                                            Putri</option>
-                                        <option value="campur" {{ request()->jenis_kos == 'campur' ? 'selected' : '' }}>
-                                            Kos Campur</option>
+                                        <option value="putra" {{ request()->tipe_kosan == 'putra' ? 'selected' : '' }}>Kos Putra</option>
+                                        <option value="putri" {{ request()->tipe_kosan == 'putri' ? 'selected' : '' }}>Kos Putri</option>
+                                        <option value="campur" {{ request()->tipe_kosan == 'campur' ? 'selected' : '' }}>Kos Campur</option>
                                     </select>
                                 </div>
 
@@ -276,52 +288,40 @@
                                     <label class="form-label">Fasilitas</label>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="fasilitas_wifi"
-                                            name="fasilitas_wifi" value="1"
-                                            {{ request()->fasilitas_wifi ? 'checked' : '' }}>
+                                            name="fasilitas[]" value="Wifi"
+                                            {{ in_array('Wifi', request('fasilitas', [])) ? 'checked' : '' }}>
                                         <label class="form-check-label" for="fasilitas_wifi">WiFi</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="fasilitas_ac"
-                                            name="fasilitas_ac" value="1"
-                                            {{ request()->fasilitas_ac ? 'checked' : '' }}>
+                                            name="fasilitas[]" value="AC"
+                                            {{ in_array('AC', request('fasilitas', [])) ? 'checked' : '' }}>
                                         <label class="form-check-label" for="fasilitas_ac">AC</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="fasilitas_kamar_mandi_dalam"
-                                            name="fasilitas_kamar_mandi_dalam" value="1"
-                                            {{ request()->fasilitas_kamar_mandi_dalam ? 'checked' : '' }}>
+                                            name="fasilitas[]" value="Kamar Mandi Dalam"
+                                            {{ in_array('Kamar Mandi Dalam', request('fasilitas', [])) ? 'checked' : '' }}>
                                         <label class="form-check-label" for="fasilitas_kamar_mandi_dalam">Kamar Mandi
                                             Dalam</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="fasilitas_parkir"
-                                            name="fasilitas_parkir" value="1"
-                                            {{ request()->fasilitas_parkir ? 'checked' : '' }}>
+                                            name="fasilitas[]" value="Tempat Parkir"
+                                            {{ in_array('Tempat Parkir', request('fasilitas', [])) ? 'checked' : '' }}>
                                         <label class="form-check-label" for="fasilitas_parkir">Parkir</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="fasilitas_dapur"
-                                            name="fasilitas_dapur" value="1"
-                                            {{ request()->fasilitas_dapur ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="fasilitas_dapur">Dapur</label>
+                                        <input class="form-check-input" type="checkbox" id="fasilitas_kasur"
+                                            name="fasilitas[]" value="Kasur"
+                                            {{ in_array('Kasur', request('fasilitas', [])) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="fasilitas_kasur">Kasur</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="fasilitas_perabotan"
-                                            name="fasilitas_perabotan" value="1"
-                                            {{ request()->fasilitas_perabotan ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="fasilitas_perabotan">Perabotan</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="fasilitas_laundry"
-                                            name="fasilitas_laundry" value="1"
-                                            {{ request()->fasilitas_laundry ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="fasilitas_laundry">Laundry</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="fasilitas_keamanan"
-                                            name="fasilitas_keamanan" value="1"
-                                            {{ request()->fasilitas_keamanan ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="fasilitas_keamanan">Keamanan 24 Jam</label>
+                                        <input class="form-check-input" type="checkbox" id="fasilitas_lemari"
+                                            name="fasilitas[]" value="Lemari"
+                                            {{ in_array('Lemari', request('fasilitas', [])) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="fasilitas_lemari">Lemari</label>
                                     </div>
                                 </div>
                             </div>
@@ -362,6 +362,22 @@
             font-weight: 700;
             color: var(--primary-dark);
             margin-bottom: 5px;
+        }
+
+        .action-btn-equal {
+            width: 135px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 767.98px) {
+            .action-btn-equal {
+                width: 110px;
+                height: 38px;
+                font-size: 0.875rem;
+            }
         }
 
         /* Filter Tags */

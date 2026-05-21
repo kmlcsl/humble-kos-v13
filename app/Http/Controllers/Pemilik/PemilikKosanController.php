@@ -16,40 +16,41 @@ use Illuminate\Support\Str;
 class PemilikKosanController extends Controller
 {
     /**
-     * Display listing of boarding houses owned by this user
+     * Menampilkan daftar kos milik user ini
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $query = Kosan::where('owner_id', $user->user_id)
+        $query = Kosan::query()->where('owner_id', $user->user_id)
             ->withCount('kamars');
 
-        if ($request->has('status') && $request->status != 'all') {
-            $query->where('status_validasi', $request->status);
+        if ($request->has('status') && $request->input('status') != 'all') {
+            $query->where('status_validasi', $request->input('status'));
         }
 
-        if ($request->has('jenis_kos') && $request->jenis_kos != 'all') {
-            $query->where('tipe_kosan', $request->jenis_kos);
+        if ($request->has('jenis_kos') && $request->input('jenis_kos') != 'all') {
+            $query->where('tipe_kosan', $request->input('jenis_kos'));
         }
 
-        if ($request->has('search') && $request->search != '') {
-            $query->where(function ($q) use ($request) {
-                $q->where('nama_kosan', 'LIKE', '%' . $request->search . '%')
-                    ->orWhere('alamat', 'LIKE', '%' . $request->search . '%')
-                    ->orWhere('kota', 'LIKE', '%' . $request->search . '%');
+        if ($request->has('search') && $request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_kosan', 'LIKE', '%' . $search . '%')
+                    ->orWhere('alamat', 'LIKE', '%' . $search . '%')
+                    ->orWhere('kota', 'LIKE', '%' . $search . '%');
             });
         }
 
         $kosans = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        $allOwnerKosan = Kosan::where('owner_id', $user->user_id)->get();
+        $allOwnerKosan = Kosan::query()->where('owner_id', $user->user_id)->get();
         $totalKosan = $allOwnerKosan->count();
         $kosanApproved = $allOwnerKosan->where('status_validasi', 'approved')->count();
         $kosanPending = $allOwnerKosan->where('status_validasi', 'pending')->count();
 
-        $totalKamar = Kamar::whereIn('kosan_id', $allOwnerKosan->pluck('kosan_id'))->count();
-        $kamarTersedia = Kamar::whereIn('kosan_id', $allOwnerKosan->pluck('kosan_id'))
+        $totalKamar = Kamar::query()->whereIn('kosan_id', $allOwnerKosan->pluck('kosan_id'))->count();
+        $kamarTersedia = Kamar::query()->whereIn('kosan_id', $allOwnerKosan->pluck('kosan_id'))
             ->where('status_kamar', 'tersedia')
             ->count();
 
@@ -68,11 +69,11 @@ class PemilikKosanController extends Controller
     }
 
     /**
-     * Show form to create new boarding house
+     * Menampilkan form buat kos baru
      */
     public function create()
     {
-        $owners = User::where('role', 'pemilik_kos')->get();
+        $owners = User::query()->where('role', 'pemilik_kos')->get();
         
         return view('pemilik.kosan.create', [
             'owners' => $owners
@@ -80,7 +81,7 @@ class PemilikKosanController extends Controller
     }
 
     /**
-     * Store new boarding house
+     * Menyimpan kos baru
      */
     public function store(Request $request)
     {
@@ -96,7 +97,7 @@ class PemilikKosanController extends Controller
             'longitude' => 'nullable|numeric',
         ]);
 
-        // Validasi foto tambahan secara terpisah
+        // Validasi foto tambahan
         if ($request->hasFile('foto_tambahan')) {
             $request->validate([
                 'foto_tambahan' => 'array|max:3',
@@ -107,11 +108,11 @@ class PemilikKosanController extends Controller
         DB::beginTransaction();
 
         try {
-            $user = Auth::user();
+            $user = User::query()->findOrFail(Auth::id());
 
             if ($request->hasFile('foto_kosan')) {
                 $file = $request->file('foto_kosan');
-                $filename = time() . '_' . Str::slug($request->nama_kosan) . '.' . $file->getClientOriginalExtension();
+                $filename = time() . '_' . Str::slug($request->input('nama_kosan')) . '.' . $file->getClientOriginalExtension();
                 $path = $file->storeAs('kosan', $filename, 'public');
                 $validated['foto_kosan'] = $path;
             }
@@ -120,13 +121,7 @@ class PemilikKosanController extends Controller
             $validated['status_validasi'] = 'pending';
             $validated['rating_rata'] = 0.0;
 
-            $kosan = Kosan::create($validated);
-
-            // Simpan foto utama ke tabel foto_properti - a path is already in validated
-            if (isset($validated['foto_kosan'])) {
-                 // The main photo path is already saved via mass assignment.
-                // No need to create a separate entry in foto_properti for the main photo.
-            }
+            $kosan = Kosan::query()->create($validated);
 
             // Upload foto tambahan (2-4)
             if ($request->hasFile('foto_tambahan')) {
@@ -137,7 +132,7 @@ class PemilikKosanController extends Controller
                     $filename = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
                     $path = $foto->storeAs('kosan', $filename, 'public');
 
-                    FotoProperti::create([
+                    FotoProperti::query()->create([
                         'properti_type' => 'kosan',
                         'properti_id' => $kosan->kosan_id,
                         'path_foto' => $path,
@@ -161,13 +156,13 @@ class PemilikKosanController extends Controller
     }
 
     /**
-     * Display single boarding house details
+     * Menampilkan detail kos
      */
-    public function show($id)
+    public function show(int $id)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $kosans = Kosan::where('kosan_id', $id)
+        $kosans = Kosan::query()->where('kosan_id', $id)
             ->where('owner_id', $user->user_id)
             ->with([
                 'kamars' => function ($query) {
@@ -189,29 +184,39 @@ class PemilikKosanController extends Controller
     }
 
     /**
-     * Show form to edit (GET) or update (PUT) boarding house
+     * Menampilkan form edit kos
      */
-    public function update(Request $request, $id)
+    public function edit(int $id)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        // Jika request GET, tampilkan form edit
+        $kosan = Kosan::query()->with(['kamars.fasilitas', 'fotos'])
+            ->where('kosan_id', $id)
+            ->where('owner_id', $user->user_id)
+            ->firstOrFail();
+
+        $owners = User::query()->where('role', 'pemilik_kos')->get();
+
+        return view('pemilik.kosan.update', [
+            'kosan' => $kosan,
+            'owners' => $owners,
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan data kos
+     */
+    public function update(Request $request, int $id)
+    {
+        // Tampilkan form edit jika request GET
         if ($request->isMethod('get')) {
-            $kosan = Kosan::with(['kamars.fasilitas', 'fotos'])
-                ->where('kosan_id', $id)
-                ->where('owner_id', $user->user_id)
-                ->firstOrFail();
-
-            $owners = User::where('role', 'pemilik_kos')->get();
-
-            return view('pemilik.kosan.update', [
-                'kosan' => $kosan,
-                'owners' => $owners,
-            ]);
+            return $this->edit($id);
         }
 
-        // Jika request PUT, proses update
-        $kosan = Kosan::where('kosan_id', $id)
+        $user = User::query()->findOrFail(Auth::id());
+
+        // Proses update jika request PUT
+        $kosan = Kosan::query()->where('kosan_id', $id)
             ->where('owner_id', $user->user_id)
             ->firstOrFail();
 
@@ -220,13 +225,12 @@ class PemilikKosanController extends Controller
             'alamat' => 'required|string',
             'kota' => 'required|string|max:100',
             'deskripsi' => 'required|string',
-            'jenis_kos' => 'required|in:putra,putri,campur', // Corrected from tipe_kosan
+            'jenis_kos' => 'required|in:putra,putri,campur',
             'peraturan' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
         ];
 
-        // Conditionally add rules for file uploads
         if ($request->hasFile('foto_kosan')) {
             $rules['foto_kosan'] = 'image|mimes:jpeg,png,jpg|max:2048';
         }
@@ -244,10 +248,10 @@ class PemilikKosanController extends Controller
         DB::beginTransaction();
 
         try {
-            // Hapus foto yang ditandai untuk dihapus
+            // Hapus foto yang dipilih
             if ($request->filled('hapus_foto')) {
-                foreach ($request->hapus_foto as $fotoId) {
-                    $foto = FotoProperti::find($fotoId);
+                foreach ($request->input('hapus_foto') as $fotoId) {
+                    $foto = FotoProperti::query()->find($fotoId);
                     if ($foto && $foto->properti_id == $id) {
                         if (Storage::disk('public')->exists($foto->path_foto)) {
                             Storage::disk('public')->delete($foto->path_foto);
@@ -259,32 +263,31 @@ class PemilikKosanController extends Controller
 
             // Update foto utama
             if ($request->hasFile('foto_kosan')) {
-                // Hapus file foto lama jika ada
                 if ($kosan->foto_kosan && Storage::disk('public')->exists($kosan->foto_kosan)) {
                     Storage::disk('public')->delete($kosan->foto_kosan);
                 }
 
                 $file = $request->file('foto_kosan');
-                $filename = time() . '_' . Str::slug($request->nama_kosan) . '.' . $file->getClientOriginalExtension();
+                $filename = time() . '_' . Str::slug($request->input('nama_kosan')) . '.' . $file->getClientOriginalExtension();
                 $path = $file->storeAs('kosan', $filename, 'public');
-                $kosan->foto_kosan = $path; // Simpan path baru ke kolom foto_kosan
+                $kosan->foto_kosan = $path;
             }
 
-            // Upload foto tambahan baru
+            // Upload foto tambahan
             if ($request->hasFile('foto_tambahan')) {
-                $existingCount = FotoProperti::where('properti_type', 'kosan')
+                $existingCount = FotoProperti::query()->where('properti_type', 'kosan')
                     ->where('properti_id', $id)
                     ->count();
 
                 $urutan = max(2, $existingCount + 1);
 
                 foreach ($request->file('foto_tambahan') as $foto) {
-                    if (FotoProperti::where('properti_type', 'kosan')->where('properti_id', $id)->count() >= 4) break;
+                    if (FotoProperti::query()->where('properti_type', 'kosan')->where('properti_id', $id)->count() >= 4) break;
 
                     $filename = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
                     $path = $foto->storeAs('kosan', $filename, 'public');
 
-                    FotoProperti::create([
+                    FotoProperti::query()->create([
                         'properti_type' => 'kosan',
                         'properti_id' => $kosan->kosan_id,
                         'path_foto' => $path,
@@ -296,12 +299,12 @@ class PemilikKosanController extends Controller
                 }
             }
 
-            // Update model fields
+            // Update data model
             $kosan->nama_kosan = $validated['nama_kosan'];
             $kosan->alamat = $validated['alamat'];
             $kosan->kota = $validated['kota'];
             $kosan->deskripsi = $validated['deskripsi'];
-            $kosan->tipe_kosan = $validated['jenis_kos']; // Use correct key
+            $kosan->tipe_kosan = $validated['jenis_kos'];
             $kosan->peraturan = $validated['peraturan'];
             $kosan->latitude = $validated['latitude'];
             $kosan->longitude = $validated['longitude'];
@@ -311,7 +314,6 @@ class PemilikKosanController extends Controller
             }
 
             $kosan->save();
-
             DB::commit();
 
             return redirect()->route('pemilik.kosan.show', $kosan->kosan_id)
@@ -323,21 +325,21 @@ class PemilikKosanController extends Controller
     }
 
     /**
-     * Delete boarding house
+     * Menghapus kos
      */
-    public function destroy($id)
+    public function destroy(int $id)
     {
         DB::beginTransaction();
 
         try {
-            $user = Auth::user();
+            $user = User::query()->findOrFail(Auth::id());
 
-            $kosan = Kosan::where('kosan_id', $id)
+            $kosan = Kosan::query()->where('kosan_id', $id)
                 ->where('owner_id', $user->user_id)
                 ->firstOrFail();
 
-            // Check if has active bookings
-            $hasActiveBookings = Kamar::where('kosan_id', $kosan->kosan_id)
+            // Cek booking aktif
+            $hasActiveBookings = Kamar::query()->where('kosan_id', $kosan->kosan_id)
                 ->whereHas('bookings', function ($query) {
                     $query->whereIn('status_booking', ['pending', 'confirmed']);
                 })
@@ -347,25 +349,23 @@ class PemilikKosanController extends Controller
                 return back()->with('error', 'Tidak dapat menghapus kos karena masih memiliki booking aktif.');
             }
 
-            // Delete photo (backward compatibility)
+            // Hapus foto
             if ($kosan->foto_kosan && Storage::disk('public')->exists($kosan->foto_kosan)) {
                 Storage::disk('public')->delete($kosan->foto_kosan);
             }
 
-            // Delete all foto_properti
-            $fotos = FotoProperti::where('properti_type', 'kosan')
+            // Hapus galeri foto
+            FotoProperti::query()->where('properti_type', 'kosan')
                 ->where('properti_id', $id)
-                ->get();
-
-            foreach ($fotos as $foto) {
-                if (Storage::disk('public')->exists($foto->path_foto)) {
-                    Storage::disk('public')->delete($foto->path_foto);
-                }
-                $foto->delete();
-            }
+                ->get()
+                ->each(function(FotoProperti $foto) {
+                    if (Storage::disk('public')->exists($foto->path_foto)) {
+                        Storage::disk('public')->delete($foto->path_foto);
+                    }
+                    $foto->delete();
+                });
 
             $kosan->delete();
-
             DB::commit();
 
             return redirect()->route('pemilik.kosan.index')
@@ -377,13 +377,13 @@ class PemilikKosanController extends Controller
     }
 
     /**
-     * Upload additional gallery photos
+     * Upload foto galeri tambahan
      */
-    public function uploadGaleri(Request $request, $id)
+    public function uploadGaleri(Request $request, int $id)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $kosan = Kosan::where('kosan_id', $id)
+        $kosan = Kosan::query()->where('kosan_id', $id)
             ->where('owner_id', $user->user_id)
             ->firstOrFail();
 
@@ -396,6 +396,8 @@ class PemilikKosanController extends Controller
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('kosan/galeri', $filename, 'public');
 
+            // Logika simpan ke database bisa ditambahkan di sini jika perlu
+
             return back()->with('success', 'Foto galeri berhasil ditambahkan.');
         }
 
@@ -403,15 +405,17 @@ class PemilikKosanController extends Controller
     }
 
     /**
-     * Delete gallery photo
+     * Menghapus foto galeri
      */
-    public function deleteGaleri($id, $foto)
+    public function deleteGaleri(int $id, int $foto)
     {
-        $user = Auth::user();
+        $user = User::query()->findOrFail(Auth::id());
 
-        $kosan = Kosan::where('kosan_id', $id)
+        $kosan = Kosan::query()->where('kosan_id', $id)
             ->where('owner_id', $user->user_id)
             ->firstOrFail();
+
+        // Logika hapus dari database dan storage bisa ditambahkan di sini
 
         return back()->with('success', 'Foto galeri berhasil dihapus.');
     }

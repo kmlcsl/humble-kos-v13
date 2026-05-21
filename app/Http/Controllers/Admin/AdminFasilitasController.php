@@ -30,7 +30,7 @@ class AdminFasilitasController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Menyimpan fasilitas baru
      */
     public function store(Request $request)
     {
@@ -41,10 +41,10 @@ class AdminFasilitasController extends Controller
         ]);
 
         $fasilitas = new Fasilitas();
-        $fasilitas->nama_fasilitas = $request->nama_fasilitas;
-        $fasilitas->deskripsi = $request->deskripsi;
+        $fasilitas->nama_fasilitas = $request->input('nama_fasilitas');
+        $fasilitas->deskripsi = $request->input('deskripsi');
 
-        // Upload icon if provided
+        // Upload icon jika ada
         if ($request->hasFile('icon_fasilitas')) {
             $path = $request->file('icon_fasilitas')->store('fasilitas/icons', 'public');
             $fasilitas->icon_fasilitas = $path;
@@ -57,11 +57,11 @@ class AdminFasilitasController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Menampilkan detail fasilitas
      */
     public function show(string $id)
     {
-        $fasilitas = Fasilitas::findOrFail($id);
+        $fasilitas = Fasilitas::query()->findOrFail($id);
 
         return view('admin.fasilitas.show', [
             'fasilitas' => $fasilitas,
@@ -69,33 +69,40 @@ class AdminFasilitasController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource (GET) or update it (PUT).
+     * Menampilkan form edit fasilitas
+     */
+    public function edit(string $id)
+    {
+        $fasilitas = Fasilitas::query()->findOrFail($id);
+
+        return view('admin.fasilitas.update', [
+            'fasilitas' => $fasilitas,
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan data fasilitas
      */
     public function update(Request $request, string $id)
     {
-        // If request GET, show the form
+        // Tampilkan form edit jika request GET
         if ($request->isMethod('get')) {
-            $fasilitas = Fasilitas::findOrFail($id);
-
-            return view('admin.fasilitas.update', [
-                'fasilitas' => $fasilitas,
-            ]);
+            return $this->edit($id);
         }
 
-        // If request PUT, process update
+        // Validasi input
         $request->validate([
             'nama_fasilitas' => 'required|string|max:100',
             'deskripsi' => 'nullable|string',
             'icon_fasilitas' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:1024',
         ]);
 
-        $fasilitas = Fasilitas::findOrFail($id);
-        $fasilitas->nama_fasilitas = $request->nama_fasilitas;
-        $fasilitas->deskripsi = $request->deskripsi;
+        $fasilitas = Fasilitas::query()->findOrFail($id);
+        $fasilitas->nama_fasilitas = $request->input('nama_fasilitas');
+        $fasilitas->deskripsi = $request->input('deskripsi');
 
-        // Upload new icon if provided
+        // Update icon jika ada
         if ($request->hasFile('icon_fasilitas')) {
-            // Delete old icon if exists
             if ($fasilitas->icon_fasilitas && Storage::disk('public')->exists($fasilitas->icon_fasilitas)) {
                 Storage::disk('public')->delete($fasilitas->icon_fasilitas);
             }

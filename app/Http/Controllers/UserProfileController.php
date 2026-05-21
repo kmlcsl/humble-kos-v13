@@ -7,12 +7,13 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Artisan;
 
 class UserProfileController extends Controller
 {
     public function index()
     {
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         return view('users.profile.index', [
             'user' => $user
@@ -21,7 +22,7 @@ class UserProfileController extends Controller
 
     public function update(Request $request)
     {
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         $rules = [
             'name' => 'required|string|max:255',
@@ -55,9 +56,14 @@ class UserProfileController extends Controller
             'profile_photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         try {
+            // Ensure directory exists
+            if (!Storage::disk('public')->exists('profile-photos')) {
+                Storage::disk('public')->makeDirectory('profile-photos');
+            }
+
             // Delete old photo if it exists
             if ($user->foto_profil && Storage::disk('public')->exists($user->foto_profil)) {
                 Storage::disk('public')->delete($user->foto_profil);
@@ -68,11 +74,21 @@ class UserProfileController extends Controller
 
             // Store the new photo
             $path = $file->storeAs('profile-photos', $filename, 'public');
+            
+            if (!$path) {
+                throw new \Exception('Gagal menyimpan file ke storage. Periksa permission folder storage di server.');
+            }
+
             $user->foto_profil = $path;
             $user->save();
 
+            // Auto link storage if not exists (helpful for server setup)
             if (!file_exists(public_path('storage'))) {
-                \Artisan::call('storage:link');
+                try {
+                    Artisan::call('storage:link');
+                } catch (\Exception $e) {
+                    // Silently fail if artisan link fails, user might need to do it manually
+                }
             }
 
             return redirect()->route('users.profile.index')
@@ -85,7 +101,7 @@ class UserProfileController extends Controller
 
     public function removeProfilePhoto()
     {
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         try {
             if ($user->foto_profil && Storage::disk('public')->exists($user->foto_profil)) {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
@@ -21,6 +22,8 @@ class UserSettingsController extends Controller
         ]);
 
         $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
+
         if (!Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'Password saat ini tidak cocok.']);
         }

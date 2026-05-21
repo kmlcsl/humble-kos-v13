@@ -618,7 +618,11 @@
                                             class="badge {{ $similarKosan->tipe_kosan == 'putra' ? 'bg-primary' : ($similarKosan->tipe_kosan == 'putri' ? 'bg-danger' : 'bg-success') }}">
                                             Kos {{ ucfirst($similarKosan->tipe_kosan) }}
                                         </span>
-                                        <span class="badge bg-info">{{ $similarKosan?->kamars?->where('status_kamar', 'tersedia')?->count() ?? 0 }} kamar tersedia</span>
+                                        @if ($similarKosan?->kamar_tersedia > 0)
+                                            <span class="badge bg-info">{{ $similarKosan?->kamar_tersedia }} kamar tersedia</span>
+                                        @else
+                                            <span class="badge bg-danger">Kamar penuh</span>
+                                        @endif
                                     </div>
                                     <div class="kosan-facilities mt-2">
                                         @php

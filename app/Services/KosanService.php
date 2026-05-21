@@ -20,7 +20,7 @@ class KosanService
 
         // Filter berdasarkan kota
         if ($request->has('kota') && !empty($request->kota)) {
-            $query->where('kota', $request->kota);
+            $query->where('kota', 'like', '%' . $request->kota . '%');
         }
 
         // Filter berdasarkan tipe kosan
@@ -57,6 +57,14 @@ class KosanService
             });
         }
 
+        // Filter berdasarkan kampus (mencari di alamat atau deskripsi)
+        if ($request->has('kampus') && !empty($request->kampus)) {
+            $query->where(function ($q) use ($request) {
+                $q->where('alamat', 'like', '%' . $request->kampus . '%')
+                  ->orWhere('deskripsi', 'like', '%' . $request->kampus . '%');
+            });
+        }
+
         // Urutkan hasil
         if ($request->has('sort') && !empty($request->sort)) {
             switch ($request->sort) {
@@ -80,6 +88,9 @@ class KosanService
         return $query->paginate(12);
     }
 
+    /**
+     * @param int|string $id
+     */
     public function getKosanById($id)
     {
         return Kosan::with(['pemilik', 'kamars.fasilitas', 'ulasanReview'])
@@ -101,6 +112,10 @@ class KosanService
             ->get();
     }
 
+    /**
+     * @param int $kosanId
+     * @param int $userId
+     */
     public function toggleFavorite($kosanId, $userId)
     {
         return [
@@ -109,6 +124,9 @@ class KosanService
         ];
     }
 
+    /**
+     * @param int|null $userId
+     */
     public function getFavoritesByUser($userId)
     {
         if (!$userId) {
@@ -119,6 +137,10 @@ class KosanService
             ->paginate(12);
     }
 
+    /**
+     * @param int $kosanId
+     * @param int $userId
+     */
     public function createBooking($kosanId, $userId, array $data)
     {
         $kosan = Kosan::findOrFail($kosanId);
@@ -245,6 +267,10 @@ class KosanService
         return $booking;
     }
 
+    /**
+     * @param int $kosanId
+     * @param int $userId
+     */
     public function addReview($kosanId, $userId, array $data)
     {
         // Periksa apakah pengguna sudah pernah booking kamar di kosan ini
@@ -286,11 +312,24 @@ class KosanService
             });
         }
 
+        // Filter berdasarkan kampus (mencari di alamat atau deskripsi)
+        if ($request->has('kampus') && !empty($request->kampus)) {
+            $query->where(function ($q) use ($request) {
+                $q->where('alamat', 'like', '%' . $request->kampus . '%')
+                  ->orWhere('deskripsi', 'like', '%' . $request->kampus . '%');
+            });
+        }
+
         $query->with(['pemilik']);
 
         return $query->paginate(12);
     }
 
+    /**
+     * @param float|string|null $latitude
+     * @param float|string|null $longitude
+     * @param float|int $radius
+     */
     public function getNearbyKosan($latitude, $longitude, $radius = 5)
     {
         if (!$latitude || !$longitude) {
@@ -337,6 +376,9 @@ class KosanService
         return $query->get();
     }
 
+    /**
+     * @param int $kosanId
+     */
     public function getAvailability($kosanId, Carbon $start, int $months)
     {
         $end = (clone $start)->addMonths(max(1, $months));
@@ -359,6 +401,9 @@ class KosanService
         ];
     }
 
+    /**
+     * @param int $kosanId
+     */
     public function getAvailabilityRange($kosanId, Carbon $start, Carbon $end)
     {
         // Verify kosan exists

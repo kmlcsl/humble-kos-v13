@@ -92,10 +92,31 @@
             <p>Masuk ke dashboard admin / pemilik kos</p>
         </div>
 
-        @if ($errors->has('username'))
+        @if ($errors->any())
             <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle"></i>
-                {{ $errors->first('username') }}
+                <div class="d-flex align-items-center mb-1 fw-bold">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span>Login Gagal</span>
+                </div>
+                <ul class="mb-0 ps-4">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if (session('success'))
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                {{ session('error') }}
             </div>
         @endif
 

@@ -59,8 +59,8 @@ class UserDashboardController extends Controller
         $recommended_kosans = $this->getRecommendedKosans($user ? $user->user_id : null);
 
         $nearby_kosans = [];
-        $latitude = request()->session()->get('user_latitude');
-        $longitude = request()->session()->get('user_longitude');
+        $latitude = session('user_latitude');
+        $longitude = session('user_longitude');
 
         if ($latitude && $longitude) {
             $nearby_kosans = $this->getNearbyKosans($latitude, $longitude, 5); // 5km radius
@@ -78,7 +78,7 @@ class UserDashboardController extends Controller
         ]);
     }
 
-    private function getRecommendedKosans($userId)
+    private function getRecommendedKosans(?int $userId)
     {
         // 1. Ambil kosan unggulan yang diatur oleh admin (berdasarkan rating tertinggi)
         $featuredKosans = Kosan::query()
@@ -133,7 +133,7 @@ class UserDashboardController extends Controller
         return $allRecommended;
     }
 
-    private function getNearbyKosans($latitude, $longitude, $radius = 5)
+    private function getNearbyKosans(float $latitude, float $longitude, float $radius = 5.0)
     {
         if (!$latitude || !$longitude) {
             return collect();
@@ -160,7 +160,7 @@ class UserDashboardController extends Controller
         return $kosans;
     }
 
-    private function formatDistance($distance)
+    private function formatDistance(float $distance)
     {
         if ($distance < 1) {
             $meters = round($distance * 1000);

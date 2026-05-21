@@ -67,7 +67,7 @@ class KamarAdminService
      * @param int $id
      * @return Kamar
      */
-    public function getKamarById($id)
+    public function getKamarById(int $id): Kamar
     {
         return Kamar::with(['kosan'])->findOrFail($id);
     }
@@ -79,7 +79,7 @@ class KamarAdminService
      * @param array $photos
      * @return Kamar
      */
-    public function createKamar(array $data, $photos = null)
+    public function createKamar(array $data, mixed $photos = null): Kamar
     {
         DB::beginTransaction();
 
@@ -113,7 +113,7 @@ class KamarAdminService
      * @param array $photos
      * @return Kamar
      */
-    public function updateKamar($id, array $data, $photos = null)
+    public function updateKamar(int $id, array $data, mixed $photos = null): Kamar
     {
         DB::beginTransaction();
 
@@ -157,7 +157,7 @@ class KamarAdminService
      * @param int $id
      * @return bool
      */
-    public function deleteKamar($id)
+    public function deleteKamar(int $id): bool
     {
         DB::beginTransaction();
 
@@ -187,7 +187,7 @@ class KamarAdminService
      * @param string $status
      * @return Kamar
      */
-    public function changeKamarStatus($id, $status)
+    public function changeKamarStatus(int $id, string $status): Kamar
     {
         $kamar = Kamar::findOrFail($id);
         $kamar->status_kamar = $status;

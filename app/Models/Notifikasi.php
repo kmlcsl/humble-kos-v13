@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class Notifikasi extends Model
 {
@@ -32,12 +33,12 @@ class Notifikasi extends Model
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
-    public function scopeUnread($query)
+    public function scopeUnread(Builder $query)
     {
         return $query->where('is_read', false);
     }
 
-    public function scopeLatest($query)
+    public function scopeLatest(Builder $query)
     {
         return $query->orderBy('created_at', 'desc');
     }

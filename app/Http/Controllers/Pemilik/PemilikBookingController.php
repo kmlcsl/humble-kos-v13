@@ -73,7 +73,7 @@ class PemilikBookingController extends Controller
     /**
      * Display single booking details
      */
-    public function show($id)
+    public function show(int $id)
     {
         $kamarIds = $this->getOwnedKamarIds();
 

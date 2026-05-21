@@ -64,7 +64,7 @@
 @endsection
 
 @section('content')
-    <div class="container-fluid py-4 px-3 px-md-4">
+    <div class="container-fluid py-4 px-3 px-md-4 pb-5">
         <!-- Header -->
         <div class="row mb-4">
             <div class="col-12">
@@ -264,8 +264,8 @@
                             </div>
 
 
-                            <div class="d-flex justify-content-end mt-4">
-                                <button type="submit" class="btn btn-primary save-btn">
+                            <div class="d-grid d-md-flex justify-content-md-end mt-4">
+                                <button type="submit" class="btn btn-primary save-btn py-3 py-md-2">
                                     <i class="fas fa-save me-2"></i>Simpan Perubahan
                                 </button>
                             </div>

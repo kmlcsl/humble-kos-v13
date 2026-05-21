@@ -229,91 +229,74 @@
                                     </div>
                                 </form>
 
-                                <!-- Auto-trigger Midtrans when snap_token exists -->
+                                <!-- Midtrans Token Ready -->
                                 @if (session('snap_token'))
-                                    <div class="alert alert-info mt-4" id="midtransLoader">
-                                        <div class="d-flex align-items-center">
-                                            <div class="spinner-border spinner-border-sm me-3" role="status"></div>
-                                            <div>
-                                                <strong>Membuka halaman pembayaran...</strong>
-                                                <small class="d-block">Jika tidak otomatis terbuka, <a href="#"
-                                                        id="manual-pay">klik di sini</a></small>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <!-- Midtrans Snap JS -->
-                                    <script src="https://app.sandbox.midtrans.com/snap/snap.js"
+                                    <script src="{{ config('services.midtrans.isProduction') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}"
                                         data-client-key="{{ config('services.midtrans.clientKey') }}"></script>
 
                                     <script>
                                         document.addEventListener('DOMContentLoaded', function() {
-                                            // Auto-trigger payment after 2 seconds
+                                            const snapToken = "{{ session('snap_token') }}";
+                                            
+                                            // Trigger Midtrans automatically
                                             setTimeout(function() {
-                                                if (typeof snap !== 'undefined') {
-                                                    triggerMidtransPayment();
-                                                } else {
-                                                    // If snap not loaded, wait a bit more
-                                                    setTimeout(triggerMidtransPayment, 2000);
-                                                }
-                                            }, 2000);
-
-                                            // Manual trigger
-                                            document.getElementById('manual-pay').addEventListener('click', function(e) {
-                                                e.preventDefault();
                                                 triggerMidtransPayment();
-                                            });
+                                            }, 500);
+                                            
+                                            // Trigger by button "Bayar Sekarang"
+                                            const payNowBtn = document.getElementById('payNowBtn');
+                                            if (payNowBtn) {
+                                                // Jika sudah ada snap_token, ubah tipe tombol jadi button agar tidak submit form
+                                                payNowBtn.type = "button";
+                                                payNowBtn.addEventListener('click', function(e) {
+                                                    e.preventDefault();
+                                                    triggerMidtransPayment();
+                                                });
+                                            }
 
                                             function triggerMidtransPayment() {
                                                 if (typeof snap === 'undefined') {
-                                                    alert('Sistem pembayaran belum siap. Refresh halaman dan coba lagi.');
+                                                    console.error('Midtrans Snap not loaded yet');
                                                     return;
                                                 }
 
-                                                snap.pay('{{ session('snap_token') }}', {
+                                                snap.pay(snapToken, {
                                                     onSuccess: function(result) {
-                                                        updatePaymentStatus('paid', result.transaction_id, result.payment_type)
+                                                        // Beri tahu backend untuk sinkronisasi status (tanpa mengirim status paid dari sini)
+                                                        updatePaymentStatus()
                                                             .finally(() => {
-                                                                window.location.href =
-                                                                    "{{ route('users.pembayaran.konfirmasi', $bookings->booking_id) }}";
+                                                                window.location.href = "{{ route('users.pembayaran.konfirmasi', $bookings->booking_id) }}";
                                                             });
                                                     },
                                                     onPending: function(result) {
-                                                        updatePaymentStatus('pending', result.transaction_id, result.payment_type)
+                                                        // Beri tahu backend untuk sinkronisasi status
+                                                        updatePaymentStatus()
                                                             .finally(() => {
-                                                                window.location.href =
-                                                                    "{{ route('users.pembayaran.konfirmasi', $bookings->booking_id) }}";
+                                                                window.location.href = "{{ route('users.pembayaran.konfirmasi', $bookings->booking_id) }}";
                                                             });
                                                     },
                                                     onError: function(result) {
-                                                        console.log('Midtrans error:', result);
-                                                        // Update loader to show error
-                                                        const loader = document.getElementById('midtransLoader');
-                                                        loader.className = 'alert alert-danger mt-4';
-                                                        loader.innerHTML = '<strong>Pembayaran gagal atau dibatalkan.</strong> Silakan klik "Bayar Sekarang" untuk mencoba lagi.';
+                                                        console.error('Midtrans error:', result);
+                                                        alert('Pembayaran gagal atau terjadi kesalahan.');
                                                     },
                                                     onClose: function() {
-                                                        // Update loader to show cancelled status
-                                                        const loader = document.getElementById('midtransLoader');
-                                                        loader.className = 'alert alert-warning mt-4';
-                                                        loader.innerHTML = '<strong>Pembayaran dibatalkan.</strong> Anda dapat melanjutkan pembayaran dengan mengklik tombol "Bayar Sekarang" di atas.';
+                                                        console.log('Customer closed the popup');
                                                     }
                                                 });
+                                            }
 
-                                                function updatePaymentStatus(status, transactionId, paymentType) {
-                                                    return fetch("{{ route('users.pembayaran.update-status', $bookings->booking_id) }}", {
-                                                        method: 'POST',
-                                                        headers: {
-                                                            'Content-Type': 'application/json',
-                                                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                                        },
-                                                        body: JSON.stringify({
-                                                            status: status,
-                                                            transaction_id: transactionId,
-                                                            payment_type: paymentType
-                                                        })
-                                                    }).catch(error => console.log('Update status error:', error));
-                                                }
+                                            function updatePaymentStatus() {
+                                                // Request ke backend tanpa mengirim status 'paid'
+                                                // Backend akan memverifikasi status asli ke Midtrans API
+                                                return fetch("{{ route('users.pembayaran.update-status', $bookings->booking_id) }}", {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                                    },
+                                                    body: JSON.stringify({})
+                                                }).catch(error => console.log('Update status error:', error));
                                             }
                                         });
                                     </script>

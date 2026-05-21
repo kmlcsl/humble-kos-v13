@@ -34,8 +34,7 @@ class ForgotPasswordController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        // We will send the password reset link to this user. Once it has been sent
-        // we will examine the response then see the message we need to show to the user.
+        // Mengirim tautan reset password
         $status = Password::broker()->sendResetLink(
             $request->only('email')
         );
@@ -45,6 +44,13 @@ class ForgotPasswordController extends Controller
                     : $this->sendResetLinkFailedResponse($request, $status);
     }
 
+    /**
+     * Respon setelah berhasil mengirim link reset.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $status
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     */
     protected function sendResetLinkResponse(Request $request, $status)
     {
         if ($request->expectsJson()) {
@@ -57,6 +63,13 @@ class ForgotPasswordController extends Controller
         return back()->with('status', trans($status));
     }
 
+    /**
+     * Respon setelah gagal mengirim link reset.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $status
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     */
     protected function sendResetLinkFailedResponse(Request $request, $status)
     {
         if ($request->expectsJson()) {

@@ -299,7 +299,12 @@
     <!-- Nearby Kos -->
     <div class="container-fluid mt-4">
         <div class="section-header d-flex justify-content-between align-items-center mb-3">
-            <h2 class="section-title">Kos Terdekat</h2>
+            <div class="d-flex align-items-center gap-2">
+                <h2 class="section-title">Kos Terdekat</h2>
+                <button id="refreshLocation" class="btn btn-sm btn-outline-primary rounded-circle" title="Refresh Lokasi">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
             <a href="{{ route('users.kosan.nearby') }}" class="view-all">Lihat Semua <i
                     class="fas fa-arrow-right ms-1"></i></a>
         </div>
@@ -1169,6 +1174,16 @@
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
+
+            // Handle refresh location button
+            const refreshBtn = document.getElementById('refreshLocation');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    const icon = this.querySelector('i');
+                    if (icon) icon.classList.add('fa-spin');
+                    requestUserLocation();
+                });
+            }
 
             // Wishlist toggle functionality
             document.querySelectorAll('.wishlist-btn').forEach(button => {

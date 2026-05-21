@@ -9,7 +9,17 @@
     <title>@yield('title', 'Home') - HumbleKos</title>
 
     <!-- Favicon -->
-    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('images/favicon-humblekos.png') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ asset('images/icon-aplikasi-humblekos.png') }}">
+    
+    <!-- Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="HumbleKos">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="HumbleKos">
+    <meta name="theme-color" content="#4f6f52">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -285,7 +295,7 @@
                         </div>
                     </div>
                     <div class="copyright text-center">
-                        <p>&copy; {{ date('Y') }} HumbleKos. All Rights Reserved.</p>
+                        <p>&copy; {{ date('Y') }} HumbleKos. Full Copyright.</p>
                     </div>
                 </div>
             </footer>
